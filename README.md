@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/jbowtie/unicode_data.svg?branch=master)](https://travis-ci.org/jbowtie/unicode_data)
+
 # UnicodeData
 
 This Elixir module provides access to additional Unicode properties required to support
