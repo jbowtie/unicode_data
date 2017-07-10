@@ -39,7 +39,7 @@ defmodule UnicodeData.Mixfile do
   defp package do
     [licenses: ["Apache 2.0"],
      name: "unicode_data",
-     maintainers: "jbowtie/John C Barstow",
+     maintainers: ["jbowtie/John C Barstow"],
      links: %{
        "GitHub" => "https://github.com/jbowtie/unicode_data",
      }
