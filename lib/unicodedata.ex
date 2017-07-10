@@ -48,7 +48,7 @@ defmodule UnicodeData do
   end
   def script_from_codepoint(codepoint) do
     <<intval::utf8>> = codepoint
-    Script.script_from_codepoint(intval)
+    script_from_codepoint(intval)
   end
 
   @doc """
@@ -91,11 +91,22 @@ defmodule UnicodeData do
       false
       iex> UnicodeData.right_to_left?("Arabic")
       true
+  
+  You can also pass the script short name.
+
+      iex> UnicodeData.right_to_left?("adlm")
+      true
+
   """
   def right_to_left?(script) do
-    script
-    |> script_to_tag
-    |> Script.right_to_left?
+    as_tag = Script.right_to_left?(script)
+    if as_tag do
+      true
+    else
+      script
+      |> script_to_tag
+      |> Script.right_to_left?
+    end
   end
 
   @doc """
@@ -114,11 +125,21 @@ defmodule UnicodeData do
       iex> UnicodeData.uses_joining_type?("Nko")
       true
 
+  You can also pass the script short name.
+
+      iex> UnicodeData.uses_joining_type?("syrc")
+      true
+
   """
   def uses_joining_type?(script) do
-    script
-    |> script_to_tag
-    |> Script.uses_joining_type?
+    as_tag = Script.uses_joining_type?(script)
+    if as_tag do
+      true
+    else
+      script
+      |> script_to_tag
+      |> Script.uses_joining_type?
+    end
   end
 
 
@@ -152,7 +173,7 @@ defmodule UnicodeData do
   end
   def joining_type(codepoint) do
     <<intval::utf8>> = codepoint
-    Script.jointype_from_codepoint(intval)
+    joining_type(intval)
   end
 
   @doc """
@@ -182,6 +203,22 @@ defmodule UnicodeData do
   end
   def joining_group(codepoint) do
     <<intval::utf8>> = codepoint
-    Script.joingroup_from_codepoint(intval)
+    joining_group(intval)
   end
+
+  # TODO: UAX9 Bidi_Class, Bidi_Paired_Bracket, Bidi_Paired_Bracket_Type,
+  # Bidi_Mirroring_Glyph, Bidi_Mirrored
+  # BidiMirroring.txt
+  # BidiBrackets.txt
+  # DerivedBidiClass.txt
+  # TODO: UAX14 Line_Break
+  # LineBreak.txt
+  # TODO: UAX11 East_Asian_Width
+  # EastAsianWidth.txt
+  # TODO: UAX29 Word_Break, Sentence_Break
+  # WordBreakProperty.txt
+  # SentenceBreakProperty.txt
+  # TODO: UAX50 Vertical_Orientation
+  # VerticalOrientation.txt
+
 end
