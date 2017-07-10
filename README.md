@@ -1,6 +1,7 @@
-[![Build Status](https://travis-ci.org/jbowtie/unicode_data.svg?branch=master)](https://travis-ci.org/jbowtie/unicode_data)
-
 # UnicodeData
+
+[![Build Status](https://travis-ci.org/jbowtie/unicode_data.svg?branch=master)](https://travis-ci.org/jbowtie/unicode_data)
+[![codecov](https://codecov.io/gh/jbowtie/unicode_data/branch/master/graph/badge.svg)](https://codecov.io/gh/jbowtie/unicode_data)
 
 This Elixir module provides access to additional Unicode properties required to support
 text layout and analysis tasks. Script identification, cursive joining, line breaking,
