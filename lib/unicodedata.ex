@@ -16,9 +16,20 @@ defmodule UnicodeData do
 
   The `Joining_Type` and `Joining_Group` properties provide support for shaping engines
   doing layout of cursive scripts.
+
+  ## Layout support
+
+  Bidirectional algorithms such the one in UAX #9 require access to several Unicode properties
+  in order to properly layout paragraphs where the direction of the text is not uniform -- for example
+  when embedding an English word into a Hebrew paragraph.
+
+  The `Bidi_Class`, `Bidi_Mirroring_Glyph`, `Bidi_Mirrored`, `Bidi_Paired_Bracket`, and `Bidi_Paired_Bracket_Type`
+  properties are specifically provided to allow for implementation
+  of the Unicode bidirectional algorithm described in [UAX #9](http://www.unicode.org/reports/tr9/).
   """
 
   alias UnicodeData.Script
+  alias UnicodeData.Bidi
 
   @doc """
   Lookup the script property associated with a codepoint.
@@ -43,6 +54,7 @@ defmodule UnicodeData do
       "Arabic"
 
   """
+  @spec script_from_codepoint(integer | String.codepoint) :: String.t
   def script_from_codepoint(codepoint) when is_integer(codepoint) do
     Script.script_from_codepoint(codepoint)
   end
@@ -73,6 +85,7 @@ defmodule UnicodeData do
 
 
   """
+  @spec script_to_tag(String.t) :: String.t
   def script_to_tag(script) do
     Script.script_to_tag(script)
   end
@@ -98,6 +111,7 @@ defmodule UnicodeData do
       true
 
   """
+  @spec right_to_left?(String.t) :: boolean
   def right_to_left?(script) do
     as_tag = Script.right_to_left?(script)
     if as_tag do
@@ -131,6 +145,7 @@ defmodule UnicodeData do
       true
 
   """
+  @spec uses_joining_type?(String.t) :: boolean
   def uses_joining_type?(script) do
     as_tag = Script.uses_joining_type?(script)
     if as_tag do
@@ -168,6 +183,7 @@ defmodule UnicodeData do
       iex> UnicodeData.joining_type("\u0710")
       "R"
   """
+  @spec joining_type(integer | String.codepoint) :: String.t
   def joining_type(codepoint) when is_integer(codepoint) do
     Script.jointype_from_codepoint(codepoint)
   end
@@ -198,6 +214,7 @@ defmodule UnicodeData do
       iex> UnicodeData.joining_group("\u0710")
       "ALAPH"
   """
+  @spec joining_group(integer | String.codepoint) :: String.t
   def joining_group(codepoint) when is_integer(codepoint) do
     Script.joingroup_from_codepoint(codepoint)
   end
@@ -206,11 +223,38 @@ defmodule UnicodeData do
     joining_group(intval)
   end
 
-  # TODO: UAX9 Bidi_Class, Bidi_Paired_Bracket, Bidi_Paired_Bracket_Type,
-  # Bidi_Mirroring_Glyph, Bidi_Mirrored
-  # BidiMirroring.txt
-  # BidiBrackets.txt
-  # DerivedBidiClass.txt
+  @doc """
+  Determine the bidirectional character type of a character.
+
+  This is used to initialize the Unicode bidirectional algorithm, published in [UAX #9](http://www.unicode.org/reports/tr9/).
+
+  There are several blocks of unassigned code points which are reserved to specific script blocks and therefore return
+  a specific bidirectional character type. For example, unassigned code point `\uFE75`, in the Arabic block, has type "AL".
+
+  If not specifically assigned or reserved, the default value is "L" (Left-to-Right).
+
+  This is sourced from [DerivedBidiClass.txt](http://www.unicode.org/Public/10.0.0/ucd/extracted/DerivedBidiClass.txt)
+
+  ## Examples
+
+      iex> UnicodeData.bidi_class("A")
+      "L"
+      iex> UnicodeData.bidi_class("\u062F")
+      "AL"
+      iex> UnicodeData.bidi_class("\u{10B40}")
+      "R"
+      iex> UnicodeData.bidi_class("\uFE75")
+      "AL"
+  """
+  @spec bidi_class(integer | String.codepoint) :: String.t
+  def bidi_class(codepoint) when is_integer(codepoint) do
+    Bidi.bidi_class(codepoint)
+  end
+  def bidi_class(codepoint) do
+    <<intval::utf8>> = codepoint
+    bidi_class(intval)
+  end
+
   # TODO: UAX14 Line_Break
   # LineBreak.txt
   # TODO: UAX11 East_Asian_Width

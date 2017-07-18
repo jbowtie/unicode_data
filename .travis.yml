@@ -10,3 +10,7 @@ script:
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)
+
+after_script:
+  - MIX_ENV=docs mix deps.get
+  - MIX_ENV=docs mix inch.report

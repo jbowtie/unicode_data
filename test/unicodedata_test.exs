@@ -39,4 +39,11 @@ defmodule UnicodedataTest do
     assert UnicodeData.joining_group("a") == "No_Joining_Group"
     assert UnicodeData.joining_group("\u0643") == "KAF"
   end
+
+  test "determine bidi_class" do
+    assert UnicodeData.bidi_class("\u05D3") == "R"
+    assert UnicodeData.bidi_class("\u0A14") == "L"
+    assert UnicodeData.bidi_class("\u0671") == "AL"
+    assert UnicodeData.bidi_class("+") == "ES"
+  end
 end
