@@ -41,7 +41,7 @@ defmodule UnicodeData.Bidi do
     end
   end
   def mirrored?(_n), do: false
-  def mirror_glyph(n), do: nil
+  def mirror_glyph(_n), do: nil
 
   # Bidi brackets
   @external_resource bidib_path = Path.join([__DIR__, "BidiBrackets.txt"])
