@@ -19,9 +19,9 @@ defmodule UnicodeData do
 
   ## Layout support
 
-  Bidirectional algorithms such the one in UAX #9 require access to several Unicode properties
-  in order to properly layout paragraphs where the direction of the text is not uniform -- for example
-  when embedding an English word into a Hebrew paragraph.
+  Bidirectional algorithms such the one in [UAX #9](http://www.unicode.org/reports/tr9/) require access
+  to several Unicode properties in order to properly layout paragraphs where the direction of the text 
+  is not uniform -- for example, when embedding an English word into a Hebrew paragraph.
 
   The `Bidi_Class`, `Bidi_Mirroring_Glyph`, `Bidi_Mirrored`, `Bidi_Paired_Bracket`, and `Bidi_Paired_Bracket_Type`
   properties are specifically provided to allow for implementation
@@ -233,7 +233,7 @@ defmodule UnicodeData do
 
   If not specifically assigned or reserved, the default value is "L" (Left-to-Right).
 
-  This is sourced from [DerivedBidiClass.txt](http://www.unicode.org/Public/10.0.0/ucd/extracted/DerivedBidiClass.txt)
+  This is sourced from [DerivedBidiClass.txt](http://www.unicode.org/Public/UNIDATA/extracted/DerivedBidiClass.txt)
 
   ## Examples
 
@@ -253,6 +253,119 @@ defmodule UnicodeData do
   def bidi_class(codepoint) do
     <<intval::utf8>> = codepoint
     bidi_class(intval)
+  end
+
+  @doc """
+  The `Bidi_Mirrored` property indicates whether or not there is another Unicode character 
+  that typically has a glyph that is the mirror image of the original character's glyph.
+
+  Character-based mirroring is used by the Unicode bidirectional algorithm.  A layout engine
+  may want to consider other method of mirroring.
+
+  Some characters like \u221B (CUBE ROOT) claim to be mirrored but do not actually have a 
+  corresponding mirror character - in those cases this function returns false.
+
+  This is sourced from [BidiMirroring.txt](http://www.unicode.org/Public/UNIDATA/BidiMirroring.txt)
+
+  ## Examples
+
+      iex> UnicodeData.bidi_mirrored?("A")
+      false
+      iex> UnicodeData.bidi_mirrored?("[")
+      true
+      iex> UnicodeData.bidi_mirrored?("\u221B")
+      false
+  """
+  @spec bidi_mirrored?(integer | String.codepoint) :: boolean
+  def bidi_mirrored?(codepoint) when is_integer(codepoint) do
+    Bidi.mirrored?(codepoint)
+  end
+  def bidi_mirrored?(codepoint) do
+    <<intval::utf8>> = codepoint
+    bidi_mirrored?(intval)
+  end
+
+  @doc """
+  The `Bidi_Mirroring_Glyph` property returns the character suitable for character-based
+  mirroring, if one exists. Otherwise, it returns `nil`.
+
+  Character-based mirroring is used by the Unicode bidirectional algorithm.  A layout engine
+  may want to consider other method of mirroring.
+
+  This is sourced from [BidiMirroring.txt](http://www.unicode.org/Public/UNIDATA/BidiMirroring.txt)
+  ## Examples
+
+      iex> UnicodeData.bidi_mirror_codepoint("[")
+      "]"
+      iex> UnicodeData.bidi_mirror_codepoint("A")
+      nil
+  """
+  @spec bidi_mirror_codepoint(integer | String.codepoint) :: String.codepoint | nil
+  def bidi_mirror_codepoint(codepoint) when is_integer(codepoint) do
+    m = Bidi.mirror_glyph(codepoint)
+    if m != nil, do: <<m::utf8>>, else: nil
+  end
+  def bidi_mirror_codepoint(<<codepoint::utf8>>) do
+    bidi_mirror_codepoint(codepoint)
+  end
+
+  @doc """
+  The Unicode `Bidi_Paired_Bracket_Type` property classifies characters into opening and closing
+  paired brackets for the purposes of the Unicode bidirectional algorithm.
+
+  It returns one of the following values:
+  * `o` Open - The character is classified as an opening bracket.
+  * `c` Close - The character is classified as a closing bracket.
+  * `n` None - the character is not a paired bracket character.
+
+  This is sourced from [BidiBrackets.txt](http://www.unicode.org/Public/UNIDATA/BidiBrackets.txt)
+
+  ## Examples
+
+      iex> UnicodeData.bidi_paired_bracket_type("[")
+      "o"
+      iex> UnicodeData.bidi_paired_bracket_type("}")
+      "c"
+      iex> UnicodeData.bidi_paired_bracket_type("A")
+      "n"
+  
+  """
+  @spec bidi_paired_bracket_type(integer | String.codepoint) :: String.t
+  def bidi_paired_bracket_type(codepoint) when is_integer(codepoint) do
+    Bidi.paired_bracket_type(codepoint)
+  end
+  def bidi_paired_bracket_type(<<codepoint::utf8>>) do
+    Bidi.paired_bracket_type(codepoint)
+  end
+
+  @doc """
+  The `Bidi_Paired_Bracket` property is used to establish pairs of opening and closing
+  brackets for the purposes of the Unicode bidirectional algorithm.
+
+  If a character is an opening or closing bracket, this will return the other character in
+  the pair. Otherwise, it returns `nil`.
+
+  For example
+
+  This is sourced from [BidiBrackets.txt](http://www.unicode.org/Public/UNIDATA/BidiBrackets.txt)
+
+  ## Examples
+
+      iex> UnicodeData.bidi_paired_bracket("[")
+      "]"
+      iex> UnicodeData.bidi_paired_bracket("]")
+      "["
+      iex> UnicodeData.bidi_paired_bracket("A")
+      nil
+  
+  """
+  @spec bidi_paired_bracket(integer | String.codepoint) :: String.codepoint | nil
+  def bidi_paired_bracket(codepoint) when is_integer(codepoint) do
+    val = Bidi.paired_bracket(codepoint)
+    if val != nil, do: <<val::utf8>>, else: nil
+  end
+  def bidi_paired_bracket(<<codepoint::utf8>>) do
+    bidi_paired_bracket(codepoint)
   end
 
   # TODO: UAX14 Line_Break
