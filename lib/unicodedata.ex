@@ -26,10 +26,25 @@ defmodule UnicodeData do
   The `Bidi_Class`, `Bidi_Mirroring_Glyph`, `Bidi_Mirrored`, `Bidi_Paired_Bracket`, and `Bidi_Paired_Bracket_Type`
   properties are specifically provided to allow for implementation
   of the Unicode bidirectional algorithm described in [UAX #9](http://www.unicode.org/reports/tr9/).
+
+  ## Text Segmentation
+
+  Textual analysis often requires splitting on line, word, or sentence boundaries. While the most
+  sophisticated algorithms require contextual knowledge, Unicode provides properties and default
+  algorithms for this purpose.
+  
+  The Unicode line-breaking algorithm described in [UAX #14](http://www.unicode.org/reports/tr14/) 
+  makes use of the `Line_Break` property and has notes about tailoring the algorithm for various
+  contexts.
+
+  Breaking on word and sentence boundaries is described in [UAX #29](http://www.unicode.org/reports/tr29/)
+  and makes use of the `Word_Break` and `Sentence_Break` properties, respectively.
+
   """
 
   alias UnicodeData.Script
   alias UnicodeData.Bidi
+  alias UnicodeData.Segment
 
   @doc """
   Lookup the script property associated with a codepoint.
@@ -164,13 +179,15 @@ defmodule UnicodeData do
   Cursive scripts have the following join types:
   *  `R` Right_Joining (top-joining for vertical)
   *  `L` Left_Joining (bottom-joining for vertical)
-  *  `D` Dual_Joining
-  *  `C` Join_Causing
-  *  `U` Non_Joining
-  *  `T` Transparent
+  *  `D` Dual_Joining -- joins to characters on both sides.
+  *  `C` Join_Causing -- forces a join to occur.
+  *  `U` Non_Joining -- does not join to characters on either side.
+  *  `T` Transparent -- characters on either side join to each other.
   
-  Characters from other scripts return `U` as they do
-  not participate in cursive shaping.
+  Transparent characters are treated as if they do not exist during joining -- typically these are
+  marks that render above or below the preceding base glyph.
+
+  Characters from other scripts return `U` as they do not participate in cursive shaping.
 
   This is sourced from [ArabicShaping.txt](http://www.unicode.org/Public/UNIDATA/ArabicShaping.txt)
 
@@ -293,6 +310,7 @@ defmodule UnicodeData do
   may want to consider other method of mirroring.
 
   This is sourced from [BidiMirroring.txt](http://www.unicode.org/Public/UNIDATA/BidiMirroring.txt)
+
   ## Examples
 
       iex> UnicodeData.bidi_mirror_codepoint("[")
@@ -345,8 +363,6 @@ defmodule UnicodeData do
   If a character is an opening or closing bracket, this will return the other character in
   the pair. Otherwise, it returns `nil`.
 
-  For example
-
   This is sourced from [BidiBrackets.txt](http://www.unicode.org/Public/UNIDATA/BidiBrackets.txt)
 
   ## Examples
@@ -368,13 +384,96 @@ defmodule UnicodeData do
     bidi_paired_bracket(codepoint)
   end
 
-  # TODO: UAX14 Line_Break
-  # LineBreak.txt
+  @doc """
+  The Line_Break property is used by the Unicode line breaking algorithm to identify locations where
+  a break opportunity exists.
+
+  These are intended to be interpreted in the scope of [UAX #14](http://www.unicode.org/reports/tr14/).
+  You may wish to override these values in some contexts.
+
+  For a list of possible return values, best practices and implementation notes, you should refer to
+  [UAX #14](http://www.unicode.org/reports/tr14/).
+
+  This is sourced from [LineBreak.txt](http://www.unicode.org/Public/UNIDATA/LineBreak.txt)
+
+  ## Examples
+
+      iex> UnicodeData.line_breaking("\u00B4")
+      "BB"
+      iex> UnicodeData.line_breaking("]")
+      "CP"
+      iex> UnicodeData.line_breaking("\u061F")
+      "EX"
+      iex> UnicodeData.line_breaking(":")
+      "IS"
+  """
+  def line_breaking(codepoint) when is_integer(codepoint) do
+    Segment.line_break(codepoint)
+  end
+  def line_breaking(<<codepoint::utf8>>) do
+    line_breaking(codepoint)
+  end
+
+  @doc """
+  The `Word_Break` property can be used to help determine word boundaries.
+  
+  [UAX #29](http://www.unicode.org/reports/tr29/) provides a simple algorithm that uses 
+  this property to handle most unambiguous situations. To get better results, you should
+  tailor the algorithm for the locale and context. In particular, hyphens and apostrophes
+  commonly require a better understanding of the context to correctly determine if they 
+  indicate a word boundary.
+
+  For a list of possible return values, best practices and implementation notes, you should refer to
+  section 4 of [UAX #29](http://www.unicode.org/reports/tr29/).
+
+  This is sourced from [WordBreakProperty.txt](http://www.unicode.org/Public/UNIDATA/auxiliary/WordBreakProperty.txt)
+
+  ## Examples
+
+      iex> UnicodeData.word_breaking("B")
+      "ALetter"
+      iex> UnicodeData.word_breaking("\u30A1")
+      "Katakana"
+      iex> UnicodeData.word_breaking("\u00B4")
+      "Other"
+  """
+  def word_breaking(codepoint) when is_integer(codepoint) do
+    Segment.word_break(codepoint)
+  end
+  def word_breaking(<<codepoint::utf8>>) do
+    word_breaking(codepoint)
+  end
+
+  @doc """
+  The `Sentence_Break` property can be used to help determine sentence boundaries.
+  
+  [UAX #29](http://www.unicode.org/reports/tr29/) provides a simple algorithm that uses this property to 
+  handle most unambiguous situations. If the locale is known, information in the [CLDR](http://cldr.unicode.org/index)
+  can be used to improve the quality of boundary analysis.
+
+  This is sourced from [SentenceBreakProperty.txt](http://www.unicode.org/Public/UNIDATA/auxiliary/SentenceBreakProperty.txt)
+
+  For a list of possible return values, best practices and implementation notes, you should refer to
+  section 5 of [UAX #29](http://www.unicode.org/reports/tr29/).
+
+  ## Examples
+
+      iex> UnicodeData.sentence_breaking(" ")
+      "Sp"
+      iex> UnicodeData.sentence_breaking("?")
+      "STerm"
+      iex> UnicodeData.sentence_breaking("]")
+      "Close"
+  """
+  def sentence_breaking(codepoint) when is_integer(codepoint) do
+    Segment.sentence_break(codepoint)
+  end
+  def sentence_breaking(<<codepoint::utf8>>) do
+    sentence_breaking(codepoint)
+  end
+
   # TODO: UAX11 East_Asian_Width
   # EastAsianWidth.txt
-  # TODO: UAX29 Word_Break, Sentence_Break
-  # WordBreakProperty.txt
-  # SentenceBreakProperty.txt
   # TODO: UAX50 Vertical_Orientation
   # VerticalOrientation.txt
 
