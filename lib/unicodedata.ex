@@ -27,7 +27,12 @@ defmodule UnicodeData do
   properties are specifically provided to allow for implementation
   of the Unicode bidirectional algorithm described in [UAX #9](http://www.unicode.org/reports/tr9/).
 
-  ## Text Segmentation
+  For layout of vertical text, the `Vertical_Orientation` and `East_Asian_Width` properties are exposed
+  to help layout engines decide whether or not to rotate characters that are normally laid out horizontally.
+  This can (and should) be tailored based on context but provide sane defaults in the absence of any
+  such context (such as when rendering a plain text document).
+
+  ## Text segmentation
 
   Textual analysis often requires splitting on line, word, or sentence boundaries. While the most
   sophisticated algorithms require contextual knowledge, Unicode provides properties and default
@@ -39,12 +44,12 @@ defmodule UnicodeData do
 
   Breaking on word and sentence boundaries is described in [UAX #29](http://www.unicode.org/reports/tr29/)
   and makes use of the `Word_Break` and `Sentence_Break` properties, respectively.
-
   """
 
   alias UnicodeData.Script
   alias UnicodeData.Bidi
   alias UnicodeData.Segment
+  alias UnicodeData.Vertical
 
   @doc """
   Lookup the script property associated with a codepoint.
@@ -474,7 +479,64 @@ defmodule UnicodeData do
 
   # TODO: UAX11 East_Asian_Width
   # EastAsianWidth.txt
-  # TODO: UAX50 Vertical_Orientation
-  # VerticalOrientation.txt
 
+  @doc """
+  The `Vertical_Orientation` property indicates the default character orientation when laying out vertical text.
+
+  This is intended to be a reasonable or legible default to use when laying out plain text in vertical columns.
+  A text layout program may need to consider the script, style, or context rather than relying exclusively on
+  the value of this property.
+
+  For more details, including a table of representative glyphs for the `Tu` and `Tr` values, see 
+  [UAX #50](http://www.unicode.org/reports/tr50/).
+
+  It returns one of the following values:
+  * `U` Upright - The character is typically displayed upright (not rotated).
+  * `R` Rotated - The character is typically displayed sideways (rotated 90 degrees).
+  * `Tu` Typographically upright - Uses a different (unspecified) glyph but falls back to upright display.
+  * `Tr` Typographically rotated - Uses a different (unspecified) glyph but falls back to rotated display.
+
+  This is sourced from [VerticalOrientation.txt](http://www.unicode.org/Public/UNIDATA/VerticalOrientation.txt)
+
+  ## Examples
+
+      iex> UnicodeData.vertical_orientation("$")
+      "R"
+      iex> UnicodeData.vertical_orientation("\u00A9")
+      "U"
+      iex> UnicodeData.vertical_orientation("\u300A")
+      "Tr"
+      iex> UnicodeData.vertical_orientation("\u3083")
+      "Tu"
+  """
+  def vertical_orientation(codepoint) when is_integer(codepoint) do
+    Vertical.orientation(codepoint)
+  end
+  def vertical_orientation(<<codepoint::utf8>>) do
+    vertical_orientation(codepoint)
+  end
+
+  @doc """
+  The `East_Asian_Width` property is useful when interoperating with legacy East Asian encodings or fixed pitch fonts.
+
+  This is an informative property that a layout engine may wish to use when tailoring line breaking or laying out vertical
+  text runs. Refer to [UAX #11](http://www.unicode.org/reports/tr11/) for a discussion and guidelines around its usage.
+
+  This is sourced from [EastAsianWidth.txt](http://www.unicode.org/Public/UNIDATA/EastAsianWidth.txt)
+
+  ## Examples
+      iex> UnicodeData.east_asian_width("$")
+      "Na"
+      iex> UnicodeData.east_asian_width("\u00AE")
+      "A"
+      iex> UnicodeData.east_asian_width("\u2B50")
+      "W"
+
+  """
+  def east_asian_width(codepoint) when is_integer(codepoint) do
+    Vertical.east_asian_width(codepoint)
+  end
+  def east_asian_width(<<codepoint::utf8>>) do
+    east_asian_width(codepoint)
+  end
 end
