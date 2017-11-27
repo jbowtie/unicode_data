@@ -6,7 +6,7 @@ defmodule UnicodeData.Mixfile do
   def project do
     [app: :unicode_data,
      version: @version,
-     elixir: "~> 1.4",
+     elixir: "~> 1.5",
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
      test_coverage: [tool: ExCoveralls],

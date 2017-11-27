@@ -419,6 +419,61 @@ defmodule UnicodeData do
     line_breaking(codepoint)
   end
 
+  def linebreak_locations(text) do
+    out = text
+    |> String.codepoints
+    |> Stream.map(&line_breaking(&1))
+    |> Stream.chunk(2, 1)
+    |> Stream.map(fn [x1, x2] -> Segment.line_break_between(x1, x2) end)
+    |> Stream.with_index(1)
+    |> Stream.filter(fn {k, _} -> k != :prohibited end)
+    #|> Enum.map(fn {k, v} -> v end)
+    |> Enum.to_list
+    out
+  end
+
+  @doc """
+  Converts a run of text into a set of lines by implementing UAX#14, breaking only at required positions,
+  and indicating allowed break positions.
+  """
+  def linebreak_with_allowed(text) do
+    text 
+    |> linebreak_locations
+    |> Enum.chunk_while({0, []}, fn {break, index}, {offset, allowed} ->
+      if break == :required do
+        {
+          :cont, 
+          {String.slice(text, offset, index-1), Enum.reverse(allowed)},
+          {index, []}
+        }
+      else
+        {:cont, {offset, [index - offset | allowed]}}
+      end
+    end,
+    fn 
+      {offset, allowed} -> {:cont, {String.slice(text, offset, String.length(text)), Enum.reverse(allowed)}, {0, []}}
+    end)
+  end
+
+  @doc """
+  Converts a run of text into a set of lines by implementing UAX#14 and breaking only at required positions.
+  """
+  def linebreak_where_required(text) do
+    text 
+    |> linebreak_locations
+    |> Stream.filter(fn {k, _} -> k == :required end)
+    |> Enum.chunk_while(0, fn {_, index}, offset ->
+      {
+        :cont, 
+        String.slice(text, offset, index-1),
+        index
+      }
+    end,
+    fn 
+      offset -> {:cont, String.slice(text, offset, String.length(text)), 0}
+    end)
+  end
+
   @doc """
   The `Word_Break` property can be used to help determine word boundaries.
   
