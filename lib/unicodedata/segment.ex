@@ -48,6 +48,7 @@ defmodule UnicodeData.Segment do
       {_, "BK"} -> :prohibited
       {_, "CR"} -> :prohibited
       {_, "LF"} -> :prohibited
+      {_, "NL"} -> :prohibited
       {_, "SP"} -> :prohibited
       {_, "ZW"} -> :prohibited
       {"ZW", _} -> :allowed
@@ -56,6 +57,8 @@ defmodule UnicodeData.Segment do
       {"ZWJ", "EM"} -> :prohibited
         #TODO: figure out how LB9 and LB10 work, would normally go here!
         #see 9.1 for a possible implementation
+      {x, "CM"} when x not in [ "BK", "CR", "LF", "NL", "SP", "ZW"] -> :prohibited
+      {x, "ZWJ"} when x not in [ "BK", "CR", "LF", "NL", "SP", "ZW"] -> :prohibited
       {"WJ", _} -> :prohibited
       {_, "WJ"} -> :prohibited
       {"GL", _} -> :prohibited
@@ -65,18 +68,24 @@ defmodule UnicodeData.Segment do
     # for now just case statement
     # TODO: figure out how tailoring will happen
     tailored = case {lb1, lb2} do
+      #LB 12a
       {x, "GL"} when x in ["SP", "BA", "HY"] -> :allowed
       {_, "GL"} -> :prohibited
+      #LB 13
       {_, "CL"} -> :prohibited
       {_, "CP"} -> :prohibited
       {_, "EX"} -> :prohibited
       {_, "IS"} -> :prohibited
-      {_, "CY"} -> :prohibited
+      {_, "SY"} -> :prohibited
+      #LB 14
       {"OP", _} -> :prohibited #SP*
+      #LB 15
       {"QU", "OP"} -> :prohibited #SP*
+      #LB 16
       {"CL", "NS"} -> :prohibited #SP*
       {"CP", "NS"} -> :prohibited #SP*
-      {"B2", "B2"} -> :prohibited
+      #LB 17
+      {"B2", "B2"} -> :prohibited #SP*
       {"SP", _} -> :allowed #LB18
       {_, "QU"} -> :prohibited
       {"QU", _} -> :prohibited
@@ -89,6 +98,7 @@ defmodule UnicodeData.Segment do
       {"BB", _} -> :prohibited
       #TODO: LB21a HL(HY|BA)x
       {"AL", "IN"} -> :prohibited
+      {"CM", "IN"} -> :prohibited #LB10 alt
       {"HL", "IN"} -> :prohibited
       {"EX", "IN"} -> :prohibited
       {"ID", "IN"} -> :prohibited
@@ -97,6 +107,7 @@ defmodule UnicodeData.Segment do
       {"IN", "IN"} -> :prohibited
       {"NU", "IN"} -> :prohibited
       {"AL", "NU"} -> :prohibited
+      {"CM", "NU"} -> :prohibited #LB10 alt
       {"HL", "NU"} -> :prohibited
       {"NU", "AL"} -> :prohibited
       {"NU", "HL"} -> :prohibited
@@ -107,11 +118,41 @@ defmodule UnicodeData.Segment do
       {"EB", "PO"} -> :prohibited
       {"EM", "PO"} -> :prohibited
       #LB 24
+      {"PR", "AL"} -> :prohibited
+      {"PR", "HL"} -> :prohibited
+      {"PO", "AL"} -> :prohibited
+      {"PO", "HL"} -> :prohibited
+      {"AL", "PR"} -> :prohibited
+      {"CM", "PR"} -> :prohibited #LB10 alt
+      {"HL", "PR"} -> :prohibited
+      {"AL", "PO"} -> :prohibited
+      {"CM", "PO"} -> :prohibited #LB10 alt
+      {"HL", "PO"} -> :prohibited
+      #LB 25
+      #LB 26
+      #LB 27
       #LB 28
       {"AL", "AL"} -> :prohibited
       {"AL", "HL"} -> :prohibited
+      {"CM", "AL"} -> :prohibited #LB10 alt
+      {"CM", "HL"} -> :prohibited #LB10 alt
       {"HL", "HL"} -> :prohibited
       {"HL", "AL"} -> :prohibited
+      #LB 29
+      {"IS", "AL"} -> :prohibited
+      {"IS", "HL"} -> :prohibited
+      #LB 30
+      {"AL", "OP"} -> :prohibited
+      {"CM", "OP"} -> :prohibited #LB10 alt
+      {"HL", "OP"} -> :prohibited
+      {"NU", "OP"} -> :prohibited
+      {"CP", "AL"} -> :prohibited
+      {"CP", "HL"} -> :prohibited
+      {"CP", "NU"} -> :prohibited
+      # 30a - TODO: actually allow break between RI pairs
+      {"RI", "RI"} -> :prohibited
+      # LB 30b
+      {"EB", "EM"} -> :prohibited
       #default - LB31
       _ -> :allowed
     end

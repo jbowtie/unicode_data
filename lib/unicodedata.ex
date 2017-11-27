@@ -418,11 +418,15 @@ defmodule UnicodeData do
   def line_breaking(<<codepoint::utf8>>) do
     line_breaking(codepoint)
   end
+  def line_breaking(<<codepoint::utf8>>, tailoring) do
+    orig = line_breaking(codepoint)
+    tailoring.(codepoint, orig)
+  end
 
   def linebreak_locations(text) do
     out = text
     |> String.codepoints
-    |> Stream.map(&line_breaking(&1))
+    |> Stream.map(fn x -> line_breaking(x, &tailor_linebreak_classes/2) end)
     |> Stream.chunk(2, 1)
     |> Stream.map(fn [x1, x2] -> Segment.line_break_between(x1, x2) end)
     |> Stream.with_index(1)
@@ -431,6 +435,32 @@ defmodule UnicodeData do
     |> Enum.to_list
     out
   end
+
+  def tailor_linebreak_classes(_codepoint, original_class) do
+    case original_class do
+      "AI" -> "AL"
+      "SG" -> "AL"
+      "XX" -> "AL"
+      #"SA" -> "AL" if General_Category == Mn or Mc
+      "SA" -> "AL"
+      "CJ" -> "NS"
+      _ -> original_class
+    end
+  end
+
+  #def break_text_into_lines(text, only_mandatory_breaks, resolution_algorithm, tailored_customizations) do
+  # uax14
+  # |> tailor_character_classifications(resolution_algorithm)
+  # |> tailor_linebreak_rules(tailored_customizations)
+  # |> mandatory_linebreaks(text)
+  # |> linebreak_opportunities
+  #
+  # UnicodeData.mandatory_linebreaks(uax14, text) -- array of strings
+  # UnicodeData.linebreak_opportunities -- {"string", [1,2,3]} string + indices
+  #end
+  #def determine_break_opportunities(text) do
+  #end
+
 
   @doc """
   Converts a run of text into a set of lines by implementing UAX#14, breaking only at required positions,
