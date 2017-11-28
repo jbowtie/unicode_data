@@ -34,7 +34,6 @@ defmodule UnicodeData.Segment do
   """
   def line_break_between(lb1, lb2) do
     # TAILORING
-    # ambiguous category resolution
     # suppress rule X
     # replace rule X (rule might return nil?)
     # mandatory only
@@ -55,8 +54,7 @@ defmodule UnicodeData.Segment do
       {"ZWJ", "ID"} -> :prohibited
       {"ZWJ", "EB"} -> :prohibited
       {"ZWJ", "EM"} -> :prohibited
-        #TODO: figure out how LB9 and LB10 work, would normally go here!
-        #see 9.1 for a possible implementation
+      # LB 9 and 10 are fully implemented in calling code
       {x, "CM"} when x not in [ "BK", "CR", "LF", "NL", "SP", "ZW"] -> :prohibited
       {x, "ZWJ"} when x not in [ "BK", "CR", "LF", "NL", "SP", "ZW"] -> :prohibited
       {"WJ", _} -> :prohibited
@@ -78,14 +76,14 @@ defmodule UnicodeData.Segment do
       {_, "IS"} -> :prohibited
       {_, "SY"} -> :prohibited
       #LB 14
-      {"OP", _} -> :prohibited #SP*
+      {"OP", _} -> :prohibited
       #LB 15
-      {"QU", "OP"} -> :prohibited #SP*
+      {"QU", "OP"} -> :prohibited
       #LB 16
-      {"CL", "NS"} -> :prohibited #SP*
-      {"CP", "NS"} -> :prohibited #SP*
+      {"CL", "NS"} -> :prohibited
+      {"CP", "NS"} -> :prohibited
       #LB 17
-      {"B2", "B2"} -> :prohibited #SP*
+      {"B2", "B2"} -> :prohibited
       {"SP", _} -> :allowed #LB18
       {_, "QU"} -> :prohibited
       {"QU", _} -> :prohibited
@@ -128,9 +126,48 @@ defmodule UnicodeData.Segment do
       {"AL", "PO"} -> :prohibited
       {"CM", "PO"} -> :prohibited #LB10 alt
       {"HL", "PO"} -> :prohibited
-      #LB 25
+      #LB 25 -- UAX tests require tailoring!
+      #{"CL", "PO"} -> :prohibited
+      #{"CP", "PO"} -> :prohibited
+      #{"CL", "PR"} -> :prohibited
+      #{"CP", "PR"} -> :prohibited
+      {"NU", "PO"} -> :prohibited
+      {"NU", "PR"} -> :prohibited
+      #{"PO", "OP"} -> :prohibited
+      {"PO", "NU"} -> :prohibited
+      #{"PR", "OP"} -> :prohibited
+      {"PR", "NU"} -> :prohibited
+      {"HY", "NU"} -> :prohibited
+      #{"IS", "NU"} -> :prohibited
+      {"NU", "NU"} -> :prohibited
+      #{"SY", "NU"} -> :prohibited
       #LB 26
+      {"JL", "JL"} -> :prohibited
+      {"JL", "JV"} -> :prohibited
+      {"JL", "H2"} -> :prohibited
+      {"JL", "H3"} -> :prohibited
+      {"JV", "JV"} -> :prohibited
+      {"JV", "JT"} -> :prohibited
+      {"H2", "JV"} -> :prohibited
+      {"H2", "JT"} -> :prohibited
+      {"JT", "JT"} -> :prohibited
+      {"H3", "JT"} -> :prohibited
       #LB 27
+      {"JL", "IN"} -> :prohibited
+      {"JV", "IN"} -> :prohibited
+      {"JT", "IN"} -> :prohibited
+      {"H2", "IN"} -> :prohibited
+      {"H3", "IN"} -> :prohibited
+      {"JL", "PO"} -> :prohibited
+      {"JV", "PO"} -> :prohibited
+      {"JT", "PO"} -> :prohibited
+      {"H2", "PO"} -> :prohibited
+      {"H3", "PO"} -> :prohibited
+      {"PR", "JL"} -> :prohibited
+      {"PR", "JV"} -> :prohibited
+      {"PR", "JT"} -> :prohibited
+      {"PR", "H2"} -> :prohibited
+      {"PR", "H3"} -> :prohibited
       #LB 28
       {"AL", "AL"} -> :prohibited
       {"AL", "HL"} -> :prohibited

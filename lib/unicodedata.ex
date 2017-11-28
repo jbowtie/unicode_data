@@ -465,6 +465,10 @@ defmodule UnicodeData do
     {:prohibited, carry_fwd}
   end
   #by default do the map part and just carry on
+  defp uax14_space_state([x1, x2], nil) when x1 in ["CM", "ZWJ"] do
+    {Segment.line_break_between("AL", x2), nil}
+  end
+  #by default do the map part and just carry on
   defp uax14_space_state([x1, x2], carry_fwd) when x1 in ["CM", "ZWJ"] do
     {Segment.line_break_between(carry_fwd, x2), nil}
   end
