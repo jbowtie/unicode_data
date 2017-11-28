@@ -423,12 +423,87 @@ defmodule UnicodeData do
     tailoring.(codepoint, orig)
   end
 
+  # any of these classes before a space, carry foward in state
+  defp uax14_space_state([x, "SP"], _) when x in ["OP", "QU", "CL", "CP", "B2", "ZW"] do
+    # automatically prohibit (LB 7)
+    # but also carry foward for other rules
+    {:prohibited, x}
+  end
+
+  # carry forward the base type when followed by a space
+  defp uax14_space_state([x1, "SP"], carry_fwd) when x1 in ["CM", "ZWJ"] and carry_fwd in ["OP", "QU", "CL", "CP", "B2", "ZW"] do
+    # automatically prohibit (LB 7)
+    # but also continue to carry foward
+    {:prohibited, carry_fwd}
+  end
+
+  # any of these classes before CM/ZWJ, carry foward in state
+  defp uax14_space_state([x, "CM"], _) when x not in ["SP", "BK", "CR", "LF", "NL", "ZW"] do
+    # automatically prohibit (LB 7)
+    # but also carry foward for other rules
+    {Segment.line_break_between(x, "CM"), x}
+  end
+  defp uax14_space_state([x, "ZWJ"], _) when x not in ["SP", "BK", "CR", "LF", "NL", "ZW"] do
+    # automatically prohibit (LB 7)
+    # but also carry foward for other rules
+    {Segment.line_break_between(x, "CM"), x}
+  end
+
+  # SP - SP; promulgate carry_fwd
+  defp uax14_space_state(["SP", "SP"], carry_fwd) do
+    # automatically prohibit (LB 7)
+    {:prohibited, carry_fwd}
+  end
+  # CM/ZWJ - CM; promulgate carry_fwd
+  defp uax14_space_state([x, "CM"], carry_fwd) when x in ["CM", "ZWJ"] do
+    # automatically prohibit (LB 7)
+    {:prohibited, carry_fwd}
+  end
+  # CM/ZWJ - ZWJ; promulgate carry_fwd
+  defp uax14_space_state([x, "ZWJ"], carry_fwd) when x in ["CM", "ZWJ"] do
+    # automatically prohibit (LB 7)
+    {:prohibited, carry_fwd}
+  end
+  #by default do the map part and just carry on
+  defp uax14_space_state([x1, x2], carry_fwd) when x1 in ["CM", "ZWJ"] do
+    {Segment.line_break_between(carry_fwd, x2), nil}
+  end
+  #LB 7
+  defp uax14_space_state(["SP", _], "ZW") do
+    {:allowed, nil}
+  end
+  # LB 14
+  defp uax14_space_state(["SP", _], "OP") do
+    {:prohibited, nil}
+  end
+  # LB 15
+  defp uax14_space_state(["SP", "OP"], "QU") do
+    {:prohibited, nil}
+  end
+  # LB 16
+  defp uax14_space_state(["SP", "NS"], "CL") do
+    {:prohibited, nil}
+  end
+  # LB 16
+  defp uax14_space_state(["SP", "NS"], "CP") do
+    {:prohibited, nil}
+  end
+  # LB 17
+  defp uax14_space_state(["SP", "B2"], "B2") do
+    {:prohibited, nil}
+  end
+  #by default do the map part and just carry on
+  defp uax14_space_state([x1, x2], carry_fwd) do
+    {Segment.line_break_between(x1, x2), carry_fwd}
+  end
+
   def linebreak_locations(text) do
     out = text
     |> String.codepoints
     |> Stream.map(fn x -> line_breaking(x, &tailor_linebreak_classes/2) end)
     |> Stream.chunk(2, 1)
-    |> Stream.map(fn [x1, x2] -> Segment.line_break_between(x1, x2) end)
+    |> Enum.map_reduce(nil, &uax14_space_state/2)
+    |> elem(0)
     |> Stream.with_index(1)
     |> Stream.filter(fn {k, _} -> k != :prohibited end)
     #|> Enum.map(fn {k, v} -> v end)

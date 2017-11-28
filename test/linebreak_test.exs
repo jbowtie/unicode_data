@@ -32,7 +32,8 @@ defmodule Uax14Test do
   @external_resource linebreak_path = Path.join([__DIR__, "LineBreakTest.txt"])
   lines = File.stream!(linebreak_path, [], :line)
           |> Stream.reject(&String.starts_with?(&1, "#"))
-          |> Enum.take(150)
+          |> Stream.take(650)
+          |> Enum.to_list
   for line <- lines do
     [test_seq, comment] = String.split(line, ~r/\#/)
     {t, breaks} = test_seq
