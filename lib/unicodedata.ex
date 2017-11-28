@@ -437,13 +437,12 @@ defmodule UnicodeData do
     {:prohibited, carry_fwd}
   end
 
-  # any of these classes before CM/ZWJ, carry foward in state
-  defp uax14_space_state([x, "CM"], _) when x not in ["SP", "BK", "CR", "LF", "NL", "ZW"] do
-    # automatically prohibit (LB 7)
+  # LB9 - non-space followed by CM/ZWJ, carry foward in state
+  defp uax14_space_state([x, "CM"], _) when x not in ["SP", "BK", "CR", "LF", "NL", "ZW", "CM", "ZWJ"] do
     # but also carry foward for other rules
     {Segment.line_break_between(x, "CM"), x}
   end
-  defp uax14_space_state([x, "ZWJ"], _) when x not in ["SP", "BK", "CR", "LF", "NL", "ZW"] do
+  defp uax14_space_state([x, "ZWJ"], _) when x not in ["SP", "BK", "CR", "LF", "NL", "ZW", "CM", "ZWJ"] do
     # automatically prohibit (LB 7)
     # but also carry foward for other rules
     {Segment.line_break_between(x, "CM"), x}
@@ -454,27 +453,35 @@ defmodule UnicodeData do
     # automatically prohibit (LB 7)
     {:prohibited, carry_fwd}
   end
-  # CM/ZWJ - CM; promulgate carry_fwd
+  # LB 9 CM/ZWJ - CM; promulgate carry_fwd
   defp uax14_space_state([x, "CM"], carry_fwd) when x in ["CM", "ZWJ"] do
     # automatically prohibit (LB 7)
     {:prohibited, carry_fwd}
   end
-  # CM/ZWJ - ZWJ; promulgate carry_fwd
+  # LB 9 CM/ZWJ - ZWJ; promulgate carry_fwd
   defp uax14_space_state([x, "ZWJ"], carry_fwd) when x in ["CM", "ZWJ"] do
     # automatically prohibit (LB 7)
     {:prohibited, carry_fwd}
   end
-  #by default do the map part and just carry on
+  # LB 8 - treat ZWJ normally (higher precendence)
+  defp uax14_space_state(["ZWJ", x2], nil) when x2 in ["ID","EB","EM"] do
+    {Segment.line_break_between("ZWJ", x2), nil}
+  end
+  # LB 10
+  defp uax14_space_state(["ZWJ", x2], nil) when x2 in ["CM", "ZWJ"] do
+    {Segment.line_break_between("AL", x2), "AL"}
+  end
+  # LB 10
   defp uax14_space_state([x1, x2], nil) when x1 in ["CM", "ZWJ"] do
     {Segment.line_break_between("AL", x2), nil}
   end
-  #by default do the map part and just carry on
+  # LB 9 - end of CM/ZWJ chain
   defp uax14_space_state([x1, x2], carry_fwd) when x1 in ["CM", "ZWJ"] do
     {Segment.line_break_between(carry_fwd, x2), nil}
   end
   #LB 7
-  defp uax14_space_state(["SP", _], "ZW") do
-    {:allowed, nil}
+  defp uax14_space_state(["SP", x2], "ZW") do
+    {Segment.line_break_between("ZW", x2), nil}
   end
   # LB 14
   defp uax14_space_state(["SP", _], "OP") do
@@ -496,7 +503,8 @@ defmodule UnicodeData do
   defp uax14_space_state(["SP", "B2"], "B2") do
     {:prohibited, nil}
   end
-  #by default do the map part and just carry on
+
+  #by default defer to our case statement
   defp uax14_space_state([x1, x2], carry_fwd) do
     {Segment.line_break_between(x1, x2), carry_fwd}
   end

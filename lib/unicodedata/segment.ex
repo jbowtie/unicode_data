@@ -95,6 +95,9 @@ defmodule UnicodeData.Segment do
       {_, "NS"} -> :prohibited
       {"BB", _} -> :prohibited
       #TODO: LB21a HL(HY|BA)x
+      # LB 21b
+      {"SY", "HL"} -> :prohibited
+      # LB 22
       {"AL", "IN"} -> :prohibited
       {"CM", "IN"} -> :prohibited #LB10 alt
       {"HL", "IN"} -> :prohibited
@@ -104,6 +107,7 @@ defmodule UnicodeData.Segment do
       {"EM", "IN"} -> :prohibited
       {"IN", "IN"} -> :prohibited
       {"NU", "IN"} -> :prohibited
+      # LB 23
       {"AL", "NU"} -> :prohibited
       {"CM", "NU"} -> :prohibited #LB10 alt
       {"HL", "NU"} -> :prohibited
