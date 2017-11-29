@@ -27,18 +27,11 @@ defmodule UnicodeData.Segment do
   def line_break(_codepoint), do: "XX"
 
   @doc """
-  Given line break classes of two characters, indicate whether a break between them is required, 
-  prohibited, or allowed according to UAX#14.
-
-  Assumes that LB1 has already resolved ambiguous characters.
+  Indicate the result of enforcing the required breaking rules (LB 2 - LB 12),
+  which cannot be tailored according to UAX #14.
   """
-  def line_break_between(lb1, lb2) do
-    # TAILORING
-    # suppress rule X
-    # replace rule X (rule might return nil?)
-    # mandatory only
-    # Mandatory rules (not tailored!)
-    mand = case {lb1, lb2} do
+  def uax14_required_rules(left, right) do
+    case {left, right} do
       {"BK", _} -> :required
       {"CR", "LF"} -> :prohibited
       {"CR", _} -> :required
@@ -62,44 +55,88 @@ defmodule UnicodeData.Segment do
       {"GL", _} -> :prohibited
       _ -> nil
     end
-    # Tailorable rules after this point
-    # for now just case statement
-    # TODO: figure out how tailoring will happen
-    tailored = case {lb1, lb2} do
-      #LB 12a
+  end
+
+  def uax14_12a(lb1, lb2) do
+    case {lb1, lb2} do
       {x, "GL"} when x in ["SP", "BA", "HY"] -> :allowed
       {_, "GL"} -> :prohibited
-      #LB 13
+      _ -> nil
+    end
+  end
+  def uax14_13(lb1, lb2) do
+    case {lb1, lb2} do
       {_, "CL"} -> :prohibited
       {_, "CP"} -> :prohibited
       {_, "EX"} -> :prohibited
       {_, "IS"} -> :prohibited
       {_, "SY"} -> :prohibited
-      #LB 14
+      _ -> nil
+    end
+  end
+  def uax14_14(lb1, lb2) do
+    case {lb1, lb2} do
       {"OP", _} -> :prohibited
-      #LB 15
+      _ -> nil
+    end
+  end
+  def uax14_15(lb1, lb2) do
+    case {lb1, lb2} do
       {"QU", "OP"} -> :prohibited
-      #LB 16
+      _ -> nil
+    end
+  end
+  def uax14_16(lb1, lb2) do
+    case {lb1, lb2} do
       {"CL", "NS"} -> :prohibited
       {"CP", "NS"} -> :prohibited
-      #LB 17
+      _ -> nil
+    end
+  end
+  def uax14_17(lb1, lb2) do
+    case {lb1, lb2} do
       {"B2", "B2"} -> :prohibited
+      _ -> nil
+    end
+  end
+  def uax14_18(lb1, lb2) do
+    case {lb1, lb2} do
       {"SP", _} -> :allowed #LB18
+      _ -> nil
+    end
+  end
+  def uax14_19(lb1, lb2) do
+    case {lb1, lb2} do
       {_, "QU"} -> :prohibited
       {"QU", _} -> :prohibited
+      _ -> nil
+    end
+  end
+  def uax14_20(lb1, lb2) do
+    case {lb1, lb2} do
       {_, "CB"} -> :allowed
       {"CB", _} -> :allowed
-      #LB 21-30 all prohibit specifc breaks
+      _ -> nil
+    end
+  end
+  def uax14_21(lb1, lb2) do
+    case {lb1, lb2} do
       {_, "BA"} -> :prohibited
       {_, "HY"} -> :prohibited
       {_, "NS"} -> :prohibited
       {"BB", _} -> :prohibited
-      #TODO: LB21a HL(HY|BA)x
-      # LB 21b
+      _ -> nil
+    end
+  end
+  def uax14_21b(lb1, lb2) do
+    case {lb1, lb2} do
       {"SY", "HL"} -> :prohibited
-      # LB 22
+      _ -> nil
+    end
+  end
+  def uax14_22(lb1, lb2) do
+    case {lb1, lb2} do
       {"AL", "IN"} -> :prohibited
-      {"CM", "IN"} -> :prohibited #LB10 alt
       {"HL", "IN"} -> :prohibited
       {"EX", "IN"} -> :prohibited
       {"ID", "IN"} -> :prohibited
@@ -107,9 +144,12 @@ defmodule UnicodeData.Segment do
       {"EM", "IN"} -> :prohibited
       {"IN", "IN"} -> :prohibited
       {"NU", "IN"} -> :prohibited
-      # LB 23
+      _ -> nil
+    end
+  end
+  def uax14_23(lb1, lb2) do
+    case {lb1, lb2} do
       {"AL", "NU"} -> :prohibited
-      {"CM", "NU"} -> :prohibited #LB10 alt
       {"HL", "NU"} -> :prohibited
       {"NU", "AL"} -> :prohibited
       {"NU", "HL"} -> :prohibited
@@ -119,18 +159,24 @@ defmodule UnicodeData.Segment do
       {"ID", "PO"} -> :prohibited
       {"EB", "PO"} -> :prohibited
       {"EM", "PO"} -> :prohibited
-      #LB 24
+      _ -> nil
+    end
+  end
+  def uax14_24(lb1, lb2) do
+    case {lb1, lb2} do
       {"PR", "AL"} -> :prohibited
       {"PR", "HL"} -> :prohibited
       {"PO", "AL"} -> :prohibited
       {"PO", "HL"} -> :prohibited
       {"AL", "PR"} -> :prohibited
-      {"CM", "PR"} -> :prohibited #LB10 alt
       {"HL", "PR"} -> :prohibited
       {"AL", "PO"} -> :prohibited
-      {"CM", "PO"} -> :prohibited #LB10 alt
       {"HL", "PO"} -> :prohibited
-      #LB 25 -- UAX tests require tailoring!
+      _ -> nil
+    end
+  end
+  def uax14_25(lb1, lb2) do
+    case {lb1, lb2} do
       #{"CL", "PO"} -> :prohibited
       #{"CP", "PO"} -> :prohibited
       #{"CL", "PR"} -> :prohibited
@@ -145,7 +191,11 @@ defmodule UnicodeData.Segment do
       #{"IS", "NU"} -> :prohibited
       {"NU", "NU"} -> :prohibited
       #{"SY", "NU"} -> :prohibited
-      #LB 26
+      _ -> nil
+    end
+  end
+  def uax14_26(lb1, lb2) do
+    case {lb1, lb2} do
       {"JL", "JL"} -> :prohibited
       {"JL", "JV"} -> :prohibited
       {"JL", "H2"} -> :prohibited
@@ -156,7 +206,11 @@ defmodule UnicodeData.Segment do
       {"H2", "JT"} -> :prohibited
       {"JT", "JT"} -> :prohibited
       {"H3", "JT"} -> :prohibited
-      #LB 27
+      _ -> nil
+    end
+  end
+  def uax14_27(lb1, lb2) do
+    case {lb1, lb2} do
       {"JL", "IN"} -> :prohibited
       {"JV", "IN"} -> :prohibited
       {"JT", "IN"} -> :prohibited
@@ -172,17 +226,29 @@ defmodule UnicodeData.Segment do
       {"PR", "JT"} -> :prohibited
       {"PR", "H2"} -> :prohibited
       {"PR", "H3"} -> :prohibited
-      #LB 28
+      _ -> nil
+    end
+  end
+  def uax14_28(lb1, lb2) do
+    case {lb1, lb2} do
       {"AL", "AL"} -> :prohibited
       {"AL", "HL"} -> :prohibited
       {"CM", "AL"} -> :prohibited #LB10 alt
       {"CM", "HL"} -> :prohibited #LB10 alt
       {"HL", "HL"} -> :prohibited
       {"HL", "AL"} -> :prohibited
-      #LB 29
+      _ -> nil
+    end
+  end
+  def uax14_29(lb1, lb2) do
+    case {lb1, lb2} do
       {"IS", "AL"} -> :prohibited
       {"IS", "HL"} -> :prohibited
-      #LB 30
+      _ -> nil
+    end
+  end
+  def uax14_30(lb1, lb2) do
+    case {lb1, lb2} do
       {"AL", "OP"} -> :prohibited
       {"CM", "OP"} -> :prohibited #LB10 alt
       {"HL", "OP"} -> :prohibited
@@ -194,11 +260,28 @@ defmodule UnicodeData.Segment do
       {"RI", "RI"} -> :prohibited
       # LB 30b
       {"EB", "EM"} -> :prohibited
-      #default - LB31
-      _ -> :allowed
+      _ -> nil
     end
+  end
 
-    if mand != nil, do: mand, else: tailored
+  @doc """
+  Given line break classes of two characters, indicate whether a break between them is required, 
+  prohibited, or allowed according to UAX#14.
+
+  Assumes that LB1 has already resolved ambiguous characters.
+  """
+  def line_break_between(lb1, lb2) do
+    tailored_rules = [
+      &uax14_12a/2, &uax14_13/2, &uax14_14/2, &uax14_15/2,
+      &uax14_16/2, &uax14_17/2, &uax14_18/2, &uax14_19/2,
+      &uax14_20/2, &uax14_21/2, &uax14_21b/2, &uax14_22/2,
+      &uax14_23/2, &uax14_24/2, &uax14_25/2, &uax14_26/2,
+      &uax14_27/2, &uax14_28/2, &uax14_29/2, &uax14_30/2
+    ]
+    req = &uax14_required_rules/2 
+    ruleset = [ req  | tailored_rules]
+    ruleset
+    |> Enum.find_value(:allowed, fn(rule) -> rule.(lb1, lb2) end)
   end
 
   @doc """
