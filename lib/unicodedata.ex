@@ -416,105 +416,19 @@ defmodule UnicodeData do
     Segment.line_break(codepoint)
   end
   def line_breaking(<<codepoint::utf8>>) do
-    line_breaking(codepoint)
+    Segment.line_break(codepoint)
   end
   def line_breaking(<<codepoint::utf8>>, tailoring) do
-    orig = line_breaking(codepoint)
+    orig = Segment.line_break(codepoint)
     tailoring.(codepoint, orig)
   end
 
-  # any of these classes before a space, carry foward in state
-  defp uax14_space_state([x, "SP"], _) when x in ["OP", "QU", "CL", "CP", "B2", "ZW"] do
-    # automatically prohibit (LB 7)
-    # but also carry foward for other rules
-    {:prohibited, x}
-  end
-
-  # carry forward the base type when followed by a space
-  defp uax14_space_state([x1, "SP"], carry_fwd) when x1 in ["CM", "ZWJ"] and carry_fwd in ["OP", "QU", "CL", "CP", "B2", "ZW"] do
-    # automatically prohibit (LB 7)
-    # but also continue to carry foward
-    {:prohibited, carry_fwd}
-  end
-
-  # LB9 - non-space followed by CM/ZWJ, carry foward in state
-  defp uax14_space_state([x, "CM"], _) when x not in ["SP", "BK", "CR", "LF", "NL", "ZW", "CM", "ZWJ"] do
-    # but also carry foward for other rules
-    {Segment.line_break_between(x, "CM"), x}
-  end
-  defp uax14_space_state([x, "ZWJ"], _) when x not in ["SP", "BK", "CR", "LF", "NL", "ZW", "CM", "ZWJ"] do
-    # automatically prohibit (LB 7)
-    # but also carry foward for other rules
-    {Segment.line_break_between(x, "CM"), x}
-  end
-
-  # SP - SP; promulgate carry_fwd
-  defp uax14_space_state(["SP", "SP"], carry_fwd) do
-    # automatically prohibit (LB 7)
-    {:prohibited, carry_fwd}
-  end
-  # LB 9 CM/ZWJ - CM; promulgate carry_fwd
-  defp uax14_space_state([x, "CM"], carry_fwd) when x in ["CM", "ZWJ"] do
-    # automatically prohibit (LB 7)
-    {:prohibited, carry_fwd}
-  end
-  # LB 9 CM/ZWJ - ZWJ; promulgate carry_fwd
-  defp uax14_space_state([x, "ZWJ"], carry_fwd) when x in ["CM", "ZWJ"] do
-    # automatically prohibit (LB 7)
-    {:prohibited, carry_fwd}
-  end
-  # LB 8 - treat ZWJ normally (higher precendence)
-  defp uax14_space_state(["ZWJ", x2], nil) when x2 in ["ID","EB","EM"] do
-    {Segment.line_break_between("ZWJ", x2), nil}
-  end
-  # LB 10
-  defp uax14_space_state(["ZWJ", x2], nil) when x2 in ["CM", "ZWJ"] do
-    {Segment.line_break_between("AL", x2), "AL"}
-  end
-  # LB 10
-  defp uax14_space_state([x1, x2], nil) when x1 in ["CM", "ZWJ"] do
-    {Segment.line_break_between("AL", x2), nil}
-  end
-  # LB 9 - end of CM/ZWJ chain
-  defp uax14_space_state([x1, x2], carry_fwd) when x1 in ["CM", "ZWJ"] do
-    {Segment.line_break_between(carry_fwd, x2), nil}
-  end
-  #LB 7
-  defp uax14_space_state(["SP", x2], "ZW") do
-    {Segment.line_break_between("ZW", x2), nil}
-  end
-  # LB 14
-  defp uax14_space_state(["SP", _], "OP") do
-    {:prohibited, nil}
-  end
-  # LB 15
-  defp uax14_space_state(["SP", "OP"], "QU") do
-    {:prohibited, nil}
-  end
-  # LB 16
-  defp uax14_space_state(["SP", "NS"], "CL") do
-    {:prohibited, nil}
-  end
-  # LB 16
-  defp uax14_space_state(["SP", "NS"], "CP") do
-    {:prohibited, nil}
-  end
-  # LB 17
-  defp uax14_space_state(["SP", "B2"], "B2") do
-    {:prohibited, nil}
-  end
-
-  #by default defer to our case statement
-  defp uax14_space_state([x1, x2], carry_fwd) do
-    {Segment.line_break_between(x1, x2), carry_fwd}
-  end
-
-  def linebreak_locations(text) do
+  def linebreak_locations(text, tailoring \\ &default_linebreak_classes/2) do
     out = text
     |> String.codepoints
-    |> Stream.map(fn x -> line_breaking(x, &tailor_linebreak_classes/2) end)
+    |> Stream.map(fn x -> line_breaking(x, tailoring) end)
     |> Stream.chunk(2, 1)
-    |> Enum.map_reduce(nil, &uax14_space_state/2)
+    |> Enum.map_reduce(nil, &Segment.uax14_break_between/2)
     |> elem(0)
     |> Stream.with_index(1)
     |> Stream.filter(fn {k, _} -> k != :prohibited end)
@@ -523,13 +437,18 @@ defmodule UnicodeData do
     out
   end
 
-  def tailor_linebreak_classes(_codepoint, original_class) do
+  @doc """
+  This is the default tailoring of linebreak classes according to UAX #14.
+
+  It resolves AI, CB, CJ, SA, SG, and XX into other line breaking classes in the
+  absence of any other criteria.
+  """
+  def default_linebreak_classes(codepoint, original_class) do
     case original_class do
       "AI" -> "AL"
       "SG" -> "AL"
       "XX" -> "AL"
-      #"SA" -> "AL" if General_Category == Mn or Mc
-      "SA" -> "AL"
+      "SA" -> if Regex.match?(~r/\p{Mn}|\p{Mc}/u, <<codepoint::utf8>>), do: "CM", else: "AL"
       "CJ" -> "NS"
       _ -> original_class
     end
