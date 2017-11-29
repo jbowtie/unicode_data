@@ -177,20 +177,20 @@ defmodule UnicodeData.Segment do
   end
   def uax14_25(lb1, lb2) do
     case {lb1, lb2} do
-      #{"CL", "PO"} -> :prohibited
-      #{"CP", "PO"} -> :prohibited
-      #{"CL", "PR"} -> :prohibited
-      #{"CP", "PR"} -> :prohibited
+      {"CL", "PO"} -> :prohibited
+      {"CP", "PO"} -> :prohibited
+      {"CL", "PR"} -> :prohibited
+      {"CP", "PR"} -> :prohibited
       {"NU", "PO"} -> :prohibited
       {"NU", "PR"} -> :prohibited
-      #{"PO", "OP"} -> :prohibited
+      {"PO", "OP"} -> :prohibited
       {"PO", "NU"} -> :prohibited
-      #{"PR", "OP"} -> :prohibited
+      {"PR", "OP"} -> :prohibited
       {"PR", "NU"} -> :prohibited
       {"HY", "NU"} -> :prohibited
-      #{"IS", "NU"} -> :prohibited
+      {"IS", "NU"} -> :prohibited
       {"NU", "NU"} -> :prohibited
-      #{"SY", "NU"} -> :prohibited
+      {"SY", "NU"} -> :prohibited
       _ -> nil
     end
   end
@@ -233,8 +233,6 @@ defmodule UnicodeData.Segment do
     case {lb1, lb2} do
       {"AL", "AL"} -> :prohibited
       {"AL", "HL"} -> :prohibited
-      {"CM", "AL"} -> :prohibited #LB10 alt
-      {"CM", "HL"} -> :prohibited #LB10 alt
       {"HL", "HL"} -> :prohibited
       {"HL", "AL"} -> :prohibited
       _ -> nil
@@ -250,7 +248,6 @@ defmodule UnicodeData.Segment do
   def uax14_30(lb1, lb2) do
     case {lb1, lb2} do
       {"AL", "OP"} -> :prohibited
-      {"CM", "OP"} -> :prohibited #LB10 alt
       {"HL", "OP"} -> :prohibited
       {"NU", "OP"} -> :prohibited
       {"CP", "AL"} -> :prohibited
@@ -264,20 +261,66 @@ defmodule UnicodeData.Segment do
     end
   end
 
+  # tailor classes for our approach
+  # replace NU with NUalt
+  def uax14_13_alt(lb1, lb2) do
+    case {lb1, lb2} do
+      {x, "CL"} when x != "NU" -> :prohibited
+      {x, "CP"} when x != "NU" -> :prohibited
+      {_, "EX"} -> :prohibited
+      {x, "IS"} when x != "NU" -> :prohibited
+      {x, "SY"} when x != "NU" -> :prohibited
+      _ -> nil
+    end
+  end
+  # NUalt props to NUalt, SY, IS
+  # NUalt props to CL, CP but then disappears
+  def uax14_25_alt(lb1, lb2) do
+    case {lb1, lb2} do
+      #(PR | PO) × ( OP | HY )? NU
+      {"PO", "NU"} -> :prohibited
+      {"PR", "NU"} -> :prohibited
+
+      #{"PO", "OP"} -> :prohibited # PO OP NU
+      #{"PR", "OP"} -> :prohibited # PR OP NU
+
+      #{"PO", "HY"} -> :prohibited # PO HY NU
+      #{"PR", "HY"} -> :prohibited # PR HY NU
+      #( OP | HY ) × NU
+      {"OP", "NU"} -> :prohibited
+      {"HY", "NU"} -> :prohibited
+
+      #NU × (NU | SY | IS)
+      {"NU", "NU"} -> :prohibited
+      {"NU", "SY"} -> :prohibited
+      {"NU", "IS"} -> :prohibited
+      #NU (NU | SY | IS)* × (NU | SY | IS | CL | CP )
+      {"NU", "CL"} -> :prohibited
+      {"NU", "CP"} -> :prohibited
+    #NU (NU | SY | IS)* (CL | CP)? × (PO | PR)
+      {"NU", "PO"} -> :prohibited
+      {"NU", "PR"} -> :prohibited
+      _ -> nil
+    end
+  end
+
+  @uax14_default_rules [
+    &UnicodeData.Segment.uax14_12a/2, &UnicodeData.Segment.uax14_13/2, &UnicodeData.Segment.uax14_14/2, &UnicodeData.Segment.uax14_15/2,
+    &UnicodeData.Segment.uax14_16/2, &UnicodeData.Segment.uax14_17/2, &UnicodeData.Segment.uax14_18/2, &UnicodeData.Segment.uax14_19/2,
+    &UnicodeData.Segment.uax14_20/2, &UnicodeData.Segment.uax14_21/2, &UnicodeData.Segment.uax14_21b/2, &UnicodeData.Segment.uax14_22/2,
+    &UnicodeData.Segment.uax14_23/2, &UnicodeData.Segment.uax14_24/2, &UnicodeData.Segment.uax14_25/2, &UnicodeData.Segment.uax14_26/2,
+    &UnicodeData.Segment.uax14_27/2, &UnicodeData.Segment.uax14_28/2, &UnicodeData.Segment.uax14_29/2, &UnicodeData.Segment.uax14_30/2
+  ]
+
+  def uax14_default_rules(), do: @uax14_default_rules
+
   @doc """
   Given line break classes of two characters, indicate whether a break between them is required, 
   prohibited, or allowed according to UAX#14.
 
   Assumes that LB1 has already resolved ambiguous characters.
   """
-  def line_break_between(lb1, lb2) do
-    tailored_rules = [
-      &uax14_12a/2, &uax14_13/2, &uax14_14/2, &uax14_15/2,
-      &uax14_16/2, &uax14_17/2, &uax14_18/2, &uax14_19/2,
-      &uax14_20/2, &uax14_21/2, &uax14_21b/2, &uax14_22/2,
-      &uax14_23/2, &uax14_24/2, &uax14_25/2, &uax14_26/2,
-      &uax14_27/2, &uax14_28/2, &uax14_29/2, &uax14_30/2
-    ]
+  def line_break_between(lb1, lb2, tailored_rules \\ @uax14_default_rules ) do
     req = &uax14_required_rules/2 
     ruleset = [ req  | tailored_rules]
     ruleset
@@ -287,94 +330,94 @@ defmodule UnicodeData.Segment do
   @doc """
   This determines whether a break is allowed, required, or prohibited between two characters.
   """
-  def uax14_break_between([x, y], state) do
-    uax14_space_state([x, y], state)
+  def uax14_break_between([x, y], state, rules \\ @uax14_default_rules) do
+    uax14_space_state([x, y], state, rules)
   end
 
   # any of these classes before a space, carry foward in state
-  defp uax14_space_state([x, "SP"], _) when x in ["OP", "QU", "CL", "CP", "B2", "ZW"] do
+  defp uax14_space_state([x, "SP"], _, _) when x in ["OP", "QU", "CL", "CP", "B2", "ZW"] do
     # automatically prohibit (LB 7)
     # but also carry foward for other rules
     {:prohibited, x}
   end
 
   # carry forward the base type when followed by a space
-  defp uax14_space_state([x1, "SP"], carry_fwd) when x1 in ["CM", "ZWJ"] and carry_fwd in ["OP", "QU", "CL", "CP", "B2", "ZW"] do
+  defp uax14_space_state([x1, "SP"], carry_fwd, _) when x1 in ["CM", "ZWJ"] and carry_fwd in ["OP", "QU", "CL", "CP", "B2", "ZW"] do
     # automatically prohibit (LB 7)
     # but also continue to carry foward
     {:prohibited, carry_fwd}
   end
 
   # LB9 - non-space followed by CM/ZWJ, carry foward in state
-  defp uax14_space_state([x, "CM"], _) when x not in ["SP", "BK", "CR", "LF", "NL", "ZW", "CM", "ZWJ"] do
+  defp uax14_space_state([x, "CM"], _, rules) when x not in ["SP", "BK", "CR", "LF", "NL", "ZW", "CM", "ZWJ"] do
     # but also carry foward for other rules
-    {line_break_between(x, "CM"), x}
+    {line_break_between(x, "CM", rules), x}
   end
-  defp uax14_space_state([x, "ZWJ"], _) when x not in ["SP", "BK", "CR", "LF", "NL", "ZW", "CM", "ZWJ"] do
+  defp uax14_space_state([x, "ZWJ"], _, rules) when x not in ["SP", "BK", "CR", "LF", "NL", "ZW", "CM", "ZWJ"] do
     # automatically prohibit (LB 7)
     # but also carry foward for other rules
-    {line_break_between(x, "CM"), x}
+    {line_break_between(x, "CM", rules), x}
   end
 
   # SP - SP; promulgate carry_fwd
-  defp uax14_space_state(["SP", "SP"], carry_fwd) do
+  defp uax14_space_state(["SP", "SP"], carry_fwd, _) do
     # automatically prohibit (LB 7)
     {:prohibited, carry_fwd}
   end
   # LB 9 CM/ZWJ - CM; promulgate carry_fwd
-  defp uax14_space_state([x, "CM"], carry_fwd) when x in ["CM", "ZWJ"] do
+  defp uax14_space_state([x, "CM"], carry_fwd, _) when x in ["CM", "ZWJ"] do
     # automatically prohibit (LB 7)
     {:prohibited, carry_fwd}
   end
   # LB 9 CM/ZWJ - ZWJ; promulgate carry_fwd
-  defp uax14_space_state([x, "ZWJ"], carry_fwd) when x in ["CM", "ZWJ"] do
+  defp uax14_space_state([x, "ZWJ"], carry_fwd, _) when x in ["CM", "ZWJ"] do
     # automatically prohibit (LB 7)
     {:prohibited, carry_fwd}
   end
   # LB 8 - treat ZWJ normally (higher precendence)
-  defp uax14_space_state(["ZWJ", x2], nil) when x2 in ["ID","EB","EM"] do
-    {line_break_between("ZWJ", x2), nil}
+  defp uax14_space_state(["ZWJ", x2], nil, rules) when x2 in ["ID","EB","EM"] do
+    {line_break_between("ZWJ", x2, rules), nil}
   end
   # LB 10
-  defp uax14_space_state(["ZWJ", x2], nil) when x2 in ["CM", "ZWJ"] do
-    {line_break_between("AL", x2), "AL"}
+  defp uax14_space_state(["ZWJ", x2], nil, rules) when x2 in ["CM", "ZWJ"] do
+    {line_break_between("AL", x2, rules), "AL"}
   end
   # LB 10
-  defp uax14_space_state([x1, x2], nil) when x1 in ["CM", "ZWJ"] do
-    {line_break_between("AL", x2), nil}
+  defp uax14_space_state([x1, x2], nil, rules) when x1 in ["CM", "ZWJ"] do
+    {line_break_between("AL", x2, rules), nil}
   end
   # LB 9 - end of CM/ZWJ chain
-  defp uax14_space_state([x1, x2], carry_fwd) when x1 in ["CM", "ZWJ"] do
-    {line_break_between(carry_fwd, x2), nil}
+  defp uax14_space_state([x1, x2], carry_fwd, rules) when x1 in ["CM", "ZWJ"] do
+    {line_break_between(carry_fwd, x2, rules), nil}
   end
   #LB 7
-  defp uax14_space_state(["SP", x2], "ZW") do
-    {line_break_between("ZW", x2), nil}
+  defp uax14_space_state(["SP", x2], "ZW", rules) do
+    {line_break_between("ZW", x2, rules), nil}
   end
   # LB 14
-  defp uax14_space_state(["SP", _], "OP") do
+  defp uax14_space_state(["SP", _], "OP", _) do
     {:prohibited, nil}
   end
   # LB 15
-  defp uax14_space_state(["SP", "OP"], "QU") do
+  defp uax14_space_state(["SP", "OP"], "QU", _) do
     {:prohibited, nil}
   end
   # LB 16
-  defp uax14_space_state(["SP", "NS"], "CL") do
+  defp uax14_space_state(["SP", "NS"], "CL", _) do
     {:prohibited, nil}
   end
   # LB 16
-  defp uax14_space_state(["SP", "NS"], "CP") do
+  defp uax14_space_state(["SP", "NS"], "CP", _) do
     {:prohibited, nil}
   end
   # LB 17
-  defp uax14_space_state(["SP", "B2"], "B2") do
+  defp uax14_space_state(["SP", "B2"], "B2", _) do
     {:prohibited, nil}
   end
 
   #by default defer to our case statement
-  defp uax14_space_state([x1, x2], carry_fwd) do
-    {line_break_between(x1, x2), carry_fwd}
+  defp uax14_space_state([x1, x2], carry_fwd, rules) do
+    {line_break_between(x1, x2, rules), carry_fwd}
   end
 
   # TODO: UAX29 Word_Break, Sentence_Break

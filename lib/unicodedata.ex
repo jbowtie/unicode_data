@@ -423,12 +423,14 @@ defmodule UnicodeData do
     tailoring.(codepoint, orig)
   end
 
-  def linebreak_locations(text, tailoring \\ &default_linebreak_classes/2) do
+  def linebreak_locations(text, tailoring \\ nil, rules \\ nil) do
+    tailored_classes = if tailoring == nil, do: &default_linebreak_classes/2, else: tailoring
+    tailored_rules = if rules == nil, do: Segment.uax14_default_rules(), else: rules
     out = text
     |> String.codepoints
-    |> Stream.map(fn x -> line_breaking(x, tailoring) end)
+    |> Stream.map(fn x -> line_breaking(x, tailored_classes) end)
     |> Stream.chunk(2, 1)
-    |> Enum.map_reduce(nil, &Segment.uax14_break_between/2)
+    |> Enum.map_reduce(nil, fn(x, acc) -> Segment.uax14_break_between(x, acc, tailored_rules) end)
     |> elem(0)
     |> Stream.with_index(1)
     |> Stream.filter(fn {k, _} -> k != :prohibited end)
