@@ -55,13 +55,13 @@ defmodule UnicodedataTest do
 
   test "break into required with candidate offsets" do
     str = "hello,\nyou cruel, cruel world"
-    actual = UnicodeData.linebreak_with_allowed(str)
+    actual = UnicodeData.identify_linebreak_positions(str)
     assert actual == [{"hello,", []}, {"you cruel, cruel world", [4, 11, 17]}]
   end
 
   test "break only required" do
     str = "hello,\nyou cruel, cruel world"
-    actual = UnicodeData.linebreak_where_required(str)
+    actual = UnicodeData.apply_required_linebreaks(str)
     assert actual == ["hello,", "you cruel, cruel world"]
   end
 end

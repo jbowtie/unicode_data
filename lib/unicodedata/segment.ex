@@ -57,6 +57,9 @@ defmodule UnicodeData.Segment do
     end
   end
 
+  @doc """
+  Do not break before NBSP and related characters, except after spaces and hyphens.
+  """
   def uax14_12a(lb1, lb2) do
     case {lb1, lb2} do
       {x, "GL"} when x in ["SP", "BA", "HY"] -> :allowed
@@ -64,6 +67,9 @@ defmodule UnicodeData.Segment do
       _ -> nil
     end
   end
+  @doc """
+  Do not break before ‘]’ or ‘!’ or ‘;’ or ‘/’, even after spaces.
+  """
   def uax14_13(lb1, lb2) do
     case {lb1, lb2} do
       {_, "CL"} -> :prohibited
@@ -74,6 +80,10 @@ defmodule UnicodeData.Segment do
       _ -> nil
     end
   end
+
+  @doc """
+  Do not break after ‘[’, even after spaces.
+  """
   def uax14_14(lb1, lb2) do
     case {lb1, lb2} do
       {"OP", _} -> :prohibited
@@ -261,49 +271,6 @@ defmodule UnicodeData.Segment do
     end
   end
 
-  # tailor classes for our approach
-  # replace NU with NUalt
-  def uax14_13_alt(lb1, lb2) do
-    case {lb1, lb2} do
-      {x, "CL"} when x != "NU" -> :prohibited
-      {x, "CP"} when x != "NU" -> :prohibited
-      {_, "EX"} -> :prohibited
-      {x, "IS"} when x != "NU" -> :prohibited
-      {x, "SY"} when x != "NU" -> :prohibited
-      _ -> nil
-    end
-  end
-  # NUalt props to NUalt, SY, IS
-  # NUalt props to CL, CP but then disappears
-  def uax14_25_alt(lb1, lb2) do
-    case {lb1, lb2} do
-      #(PR | PO) × ( OP | HY )? NU
-      {"PO", "NU"} -> :prohibited
-      {"PR", "NU"} -> :prohibited
-
-      #{"PO", "OP"} -> :prohibited # PO OP NU
-      #{"PR", "OP"} -> :prohibited # PR OP NU
-
-      #{"PO", "HY"} -> :prohibited # PO HY NU
-      #{"PR", "HY"} -> :prohibited # PR HY NU
-      #( OP | HY ) × NU
-      {"OP", "NU"} -> :prohibited
-      {"HY", "NU"} -> :prohibited
-
-      #NU × (NU | SY | IS)
-      {"NU", "NU"} -> :prohibited
-      {"NU", "SY"} -> :prohibited
-      {"NU", "IS"} -> :prohibited
-      #NU (NU | SY | IS)* × (NU | SY | IS | CL | CP )
-      {"NU", "CL"} -> :prohibited
-      {"NU", "CP"} -> :prohibited
-    #NU (NU | SY | IS)* (CL | CP)? × (PO | PR)
-      {"NU", "PO"} -> :prohibited
-      {"NU", "PR"} -> :prohibited
-      _ -> nil
-    end
-  end
-
   @uax14_default_rules [
     &UnicodeData.Segment.uax14_12a/2, &UnicodeData.Segment.uax14_13/2, &UnicodeData.Segment.uax14_14/2, &UnicodeData.Segment.uax14_15/2,
     &UnicodeData.Segment.uax14_16/2, &UnicodeData.Segment.uax14_17/2, &UnicodeData.Segment.uax14_18/2, &UnicodeData.Segment.uax14_19/2,
@@ -312,11 +279,15 @@ defmodule UnicodeData.Segment do
     &UnicodeData.Segment.uax14_27/2, &UnicodeData.Segment.uax14_28/2, &UnicodeData.Segment.uax14_29/2, &UnicodeData.Segment.uax14_30/2
   ]
 
+  @doc """
+  The default implementation of the tailorable rules section of the algorithm.
+  """
   def uax14_default_rules(), do: @uax14_default_rules
 
   @doc """
   Given line break classes of two characters, indicate whether a break between them is required, 
-  prohibited, or allowed according to UAX#14.
+  prohibited, or allowed according to UAX #14. You can supply a tailored set of rules if you
+  do not want the default behaviour.
 
   Assumes that LB1 has already resolved ambiguous characters.
   """
