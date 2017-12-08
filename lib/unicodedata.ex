@@ -42,6 +42,22 @@ defmodule UnicodeData do
   makes use of the `Line_Break` property and has notes about tailoring the algorithm for various
   contexts.
 
+  This module exposes the property, a conformant implementation of the line-breaking algorithm, and the 
+  ability to tailor the algorithm according to the standard. As part of the test suite it tailors the algorithm
+  by customizing rules 13 and 25 per the example given in the algorithm description. 
+
+  Breaking text into paragraphs can be approximated by line breaking only at required break points.
+
+      iex> UnicodeData.apply_required_linebreaks("Paragraph 1.\\nParagraph 2.")
+      ["Paragraph 1.", "Paragraph 2."]
+
+  Laying out paragraphs of text usually involves identifying potential breakpoints and choosing the
+  ones that best satisfy layout constraints. To aid in this analysis, the `identify_linebreak_positions`
+  returns a list of indices that indicate potential break positions.
+
+      iex> UnicodeData.identify_linebreak_positions("Where can this line be broken?\\nLet me know.")
+      [{"Where can this line be broken?", [6, 10, 15, 20, 23]}, {"Let me know.", [4, 7]}]
+
   Breaking on word and sentence boundaries is described in [UAX #29](http://www.unicode.org/reports/tr29/)
   and makes use of the `Word_Break` and `Sentence_Break` properties, respectively.
   """
@@ -416,7 +432,98 @@ defmodule UnicodeData do
     Segment.line_break(codepoint)
   end
   def line_breaking(<<codepoint::utf8>>) do
-    line_breaking(codepoint)
+    Segment.line_break(codepoint)
+  end
+  def line_breaking(<<codepoint::utf8>>, tailoring) do
+    orig = Segment.line_break(codepoint)
+    tailoring.(codepoint, orig)
+  end
+
+  @doc """
+  Indicate all linebreak opportunities in a string of text according to UAX 14.
+
+  Breaks opportunities are classified as either required or allowed.
+  """
+  def linebreak_locations(text, tailoring \\ nil, rules \\ nil) do
+    tailored_classes = if tailoring == nil, do: &default_linebreak_classes/2, else: tailoring
+    tailored_rules = if rules == nil, do: Segment.uax14_default_rules(), else: rules
+    out = text
+    |> String.codepoints
+    |> Stream.map(fn x -> line_breaking(x, tailored_classes) end)
+    |> Stream.chunk(2, 1)
+    |> Enum.map_reduce(nil, fn(x, acc) -> Segment.uax14_break_between(x, acc, tailored_rules) end)
+    |> elem(0)
+    |> Stream.with_index(1)
+    |> Stream.filter(fn {k, _} -> k != :prohibited end)
+    #|> Enum.map(fn {k, v} -> v end)
+    |> Enum.to_list
+    out
+  end
+
+  @doc """
+  This is the default tailoring of linebreak classes according to UAX #14.
+
+  It resolves AI, CB, CJ, SA, SG, and XX into other line breaking classes in the
+  absence of any other criteria.
+  """
+  def default_linebreak_classes(codepoint, original_class) do
+    case original_class do
+      "AI" -> "AL"
+      "SG" -> "AL"
+      "XX" -> "AL"
+      "SA" -> if Regex.match?(~r/\p{Mn}|\p{Mc}/u, <<codepoint::utf8>>), do: "CM", else: "AL"
+      "CJ" -> "NS"
+      _ -> original_class
+    end
+  end
+
+  @doc """
+  Converts a run of text into a set of lines by implementing UAX#14, breaking only at required positions,
+  and indicating allowed break positions.
+  """
+  def identify_linebreak_positions(text, tailoring \\ nil, rules \\ nil) do
+    text 
+    |> linebreak_locations(tailoring, rules)
+    |> Enum.chunk_while({0, []}, fn {break, index}, {offset, allowed} ->
+      if break == :required do
+        {
+          :cont, 
+          {String.slice(text, offset, index-1), Enum.reverse(allowed)},
+          {index, []}
+        }
+      else
+        {:cont, {offset, [index - offset | allowed]}}
+      end
+    end,
+    fn 
+      {offset, allowed} -> {:cont, {String.slice(text, offset, String.length(text)), Enum.reverse(allowed)}, {0, []}}
+    end)
+  end
+
+  @doc """
+  Break a run of text into lines. It only breaks where required and ignores other break opportunities.
+
+  This is a conforming implementation of [UAX #14](http://www.unicode.org/reports/tr14/).
+
+  It supports tailoring the assignment of linebreak classes as well as tailoring the rules themselves.
+
+  Converts a run of text into a set of lines by implementing UAX#14 and breaking only at required positions.
+  """
+  def apply_required_linebreaks(text, linebreak_classification \\ nil, rules \\ nil) do
+    text 
+    |> linebreak_locations(linebreak_classification, rules)
+    |> Stream.filter(fn {k, _} -> k == :required end)
+    |> Stream.chunk_while(0, fn {_, index}, offset ->
+      {
+        :cont, 
+        String.slice(text, offset, index-1),
+        index
+      }
+    end,
+    fn 
+      offset -> {:cont, String.slice(text, offset, String.length(text)), 0}
+    end)
+    |> Enum.to_list
   end
 
   @doc """

@@ -1,12 +1,12 @@
 defmodule UnicodeData.Mixfile do
   use Mix.Project
 
-  @version "0.5.0"
+  @version "0.6.0"
 
   def project do
     [app: :unicode_data,
      version: @version,
-     elixir: "~> 1.4",
+     elixir: "~> 1.5",
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
      test_coverage: [tool: ExCoveralls],
@@ -34,9 +34,9 @@ defmodule UnicodeData.Mixfile do
   #
   # Type "mix help deps" for more examples and options
   defp deps do
-    [{:ex_doc, "~> 0.16", only: :dev, runtime: false},
-     {:excoveralls, "~> 0.7.1", only: :test},
-     {:inch_ex, only: :docs}]
+    [{:ex_doc, "~> 0.18", only: :dev, runtime: false},
+     {:excoveralls, "~> 0.7.5", only: :test},
+     {:inch_ex, "~> 0.5.6", only: :docs}]
   end
 
   defp package do

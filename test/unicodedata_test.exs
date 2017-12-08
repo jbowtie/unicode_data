@@ -46,4 +46,22 @@ defmodule UnicodedataTest do
     assert UnicodeData.bidi_class("\u0671") == "AL"
     assert UnicodeData.bidi_class("+") == "ES"
   end
+
+  test "simple check of break locations" do
+    str = "hello,\ncruel world"
+    actual = UnicodeData.linebreak_locations(str)
+    assert actual == [required: 7, allowed: 13]
+  end
+
+  test "break into required with candidate offsets" do
+    str = "hello,\nyou cruel, cruel world"
+    actual = UnicodeData.identify_linebreak_positions(str)
+    assert actual == [{"hello,", []}, {"you cruel, cruel world", [4, 11, 17]}]
+  end
+
+  test "break only required" do
+    str = "hello,\nyou cruel, cruel world"
+    actual = UnicodeData.apply_required_linebreaks(str)
+    assert actual == ["hello,", "you cruel, cruel world"]
+  end
 end
