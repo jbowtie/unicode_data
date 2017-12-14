@@ -38,6 +38,8 @@ defmodule UnicodeData do
   sophisticated algorithms require contextual knowledge, Unicode provides properties and default
   algorithms for this purpose.
   
+  ### Line Breaking
+
   The Unicode line-breaking algorithm described in [UAX #14](http://www.unicode.org/reports/tr14/) 
   makes use of the `Line_Break` property and has notes about tailoring the algorithm for various
   contexts.
@@ -46,7 +48,8 @@ defmodule UnicodeData do
   ability to tailor the algorithm according to the standard. As part of the test suite it tailors the algorithm
   by customizing rules 13 and 25 per the example given in the algorithm description. 
 
-  Breaking text into paragraphs can be approximated by line breaking only at required break points.
+  For most purposes, breaking plain text into paragraphs can be accomplished by line breaking only at required
+  break points.
 
       iex> UnicodeData.apply_required_linebreaks("Paragraph 1.\\nParagraph 2.")
       ["Paragraph 1.", "Paragraph 2."]
@@ -58,6 +61,19 @@ defmodule UnicodeData do
       iex> UnicodeData.identify_linebreak_positions("Where can this line be broken?\\nLet me know.")
       [{"Where can this line be broken?", [6, 10, 15, 20, 23]}, {"Let me know.", [4, 7]}]
 
+  ### Tailoring the line-breaking algorithm
+
+  This implementation allows for several ways to tailor the algorithm for more complex needs.
+
+  The first is to modify the classification of code points by supplying a `linebreak_classifier` function to
+  any of the line-breaking functions. If you don't supply one, the aptly-named `default_linebreak_classes/2` 
+  will be applied to conform with the default implementation.
+
+  The second is to replace, discard, or supplement one or more of the tailorable rules. An example will be
+  provided in future versions; for now, we recommend looking at the test suite to see such tailoring in action.
+
+  ### Word and sentence breaking
+
   Breaking on word and sentence boundaries is described in [UAX #29](http://www.unicode.org/reports/tr29/)
   and makes use of the `Word_Break` and `Sentence_Break` properties, respectively.
   """
@@ -66,6 +82,26 @@ defmodule UnicodeData do
   alias UnicodeData.Bidi
   alias UnicodeData.Segment
   alias UnicodeData.Vertical
+
+  @typedoc """
+  A codepoint in either binary or numeric form.
+  """
+  @type cp :: integer | String.codepoint
+
+  @typedoc """
+  Function that can override or resolve the linebreak classification of a codepoint.
+  """
+  @type linebreak_classifier :: (String.codepoint, String.t -> String.t)
+
+  @typedoc """
+  Function that determines whether a break is allowed between two linebreak classifiers.
+  """
+  @type uax14_tailored_rule :: (String.t, String.t, String.t | nil -> {atom | nil, String.t | nil})
+
+  @typedoc """
+  Set of tailored line-breaking rules.
+  """
+  @type uax14_ruleset :: [uax14_tailored_rule]
 
   @doc """
   Lookup the script property associated with a codepoint.
@@ -221,7 +257,7 @@ defmodule UnicodeData do
       iex> UnicodeData.joining_type("\u0710")
       "R"
   """
-  @spec joining_type(integer | String.codepoint) :: String.t
+  @spec joining_type(cp) :: String.t
   def joining_type(codepoint) when is_integer(codepoint) do
     Script.jointype_from_codepoint(codepoint)
   end
@@ -252,7 +288,7 @@ defmodule UnicodeData do
       iex> UnicodeData.joining_group("\u0710")
       "ALAPH"
   """
-  @spec joining_group(integer | String.codepoint) :: String.t
+  @spec joining_group(cp) :: String.t
   def joining_group(codepoint) when is_integer(codepoint) do
     Script.joingroup_from_codepoint(codepoint)
   end
@@ -284,7 +320,7 @@ defmodule UnicodeData do
       iex> UnicodeData.bidi_class("\uFE75")
       "AL"
   """
-  @spec bidi_class(integer | String.codepoint) :: String.t
+  @spec bidi_class(cp) :: String.t
   def bidi_class(codepoint) when is_integer(codepoint) do
     Bidi.bidi_class(codepoint)
   end
@@ -314,7 +350,7 @@ defmodule UnicodeData do
       iex> UnicodeData.bidi_mirrored?("\u221B")
       false
   """
-  @spec bidi_mirrored?(integer | String.codepoint) :: boolean
+  @spec bidi_mirrored?(cp) :: boolean
   def bidi_mirrored?(codepoint) when is_integer(codepoint) do
     Bidi.mirrored?(codepoint)
   end
@@ -339,7 +375,7 @@ defmodule UnicodeData do
       iex> UnicodeData.bidi_mirror_codepoint("A")
       nil
   """
-  @spec bidi_mirror_codepoint(integer | String.codepoint) :: String.codepoint | nil
+  @spec bidi_mirror_codepoint(cp) :: String.codepoint | nil
   def bidi_mirror_codepoint(codepoint) when is_integer(codepoint) do
     m = Bidi.mirror_glyph(codepoint)
     if m != nil, do: <<m::utf8>>, else: nil
@@ -369,7 +405,7 @@ defmodule UnicodeData do
       "n"
   
   """
-  @spec bidi_paired_bracket_type(integer | String.codepoint) :: String.t
+  @spec bidi_paired_bracket_type(cp) :: String.t
   def bidi_paired_bracket_type(codepoint) when is_integer(codepoint) do
     Bidi.paired_bracket_type(codepoint)
   end
@@ -396,7 +432,7 @@ defmodule UnicodeData do
       nil
   
   """
-  @spec bidi_paired_bracket(integer | String.codepoint) :: String.codepoint | nil
+  @spec bidi_paired_bracket(cp) :: String.codepoint | nil
   def bidi_paired_bracket(codepoint) when is_integer(codepoint) do
     val = Bidi.paired_bracket(codepoint)
     if val != nil, do: <<val::utf8>>, else: nil
@@ -410,7 +446,8 @@ defmodule UnicodeData do
   a break opportunity exists.
 
   These are intended to be interpreted in the scope of [UAX #14](http://www.unicode.org/reports/tr14/).
-  You may wish to override these values in some contexts.
+  You may wish to override these values in some contexts - in such cases consider providing a classifier
+  to `line_breaking/2`.
 
   For a list of possible return values, best practices and implementation notes, you should refer to
   [UAX #14](http://www.unicode.org/reports/tr14/).
@@ -428,12 +465,21 @@ defmodule UnicodeData do
       iex> UnicodeData.line_breaking(":")
       "IS"
   """
+  @spec line_breaking(cp) :: String.t
   def line_breaking(codepoint) when is_integer(codepoint) do
     Segment.line_break(codepoint)
   end
   def line_breaking(<<codepoint::utf8>>) do
     Segment.line_break(codepoint)
   end
+
+  @doc """
+  Tailors the `Line_Break` property by applying the `tailoring` function.
+
+  This allows you to override the value that would normally be returned and is a simple way to tailor the 
+  behaviour of the line breaking algorithm.
+  """
+  @spec line_breaking(cp, linebreak_classifier) :: String.t
   def line_breaking(<<codepoint::utf8>>, tailoring) do
     orig = Segment.line_break(codepoint)
     tailoring.(codepoint, orig)
@@ -444,6 +490,7 @@ defmodule UnicodeData do
 
   Breaks opportunities are classified as either required or allowed.
   """
+  @spec linebreak_locations(String.t, linebreak_classifier | nil, uax14_ruleset | nil) :: [{:required | :allowed, integer}]
   def linebreak_locations(text, tailoring \\ nil, rules \\ nil) do
     tailored_classes = if tailoring == nil, do: &default_linebreak_classes/2, else: tailoring
     tailored_rules = if rules == nil, do: Segment.uax14_default_rules(), else: rules
@@ -465,7 +512,11 @@ defmodule UnicodeData do
 
   It resolves AI, CB, CJ, SA, SG, and XX into other line breaking classes in the
   absence of any other criteria.
+
+  If you are supplying your own tailoring function, you may want unhandled cases to
+  fall back to this implementation.
   """
+  @spec default_linebreak_classes(cp, String.t) :: String.t
   def default_linebreak_classes(codepoint, original_class) do
     case original_class do
       "AI" -> "AL"
@@ -481,6 +532,7 @@ defmodule UnicodeData do
   Converts a run of text into a set of lines by implementing UAX#14, breaking only at required positions,
   and indicating allowed break positions.
   """
+  @spec identify_linebreak_positions(String.t, linebreak_classifier | nil, uax14_ruleset | nil) :: [{String.t, [integer]}]
   def identify_linebreak_positions(text, tailoring \\ nil, rules \\ nil) do
     text 
     |> linebreak_locations(tailoring, rules)
@@ -509,6 +561,7 @@ defmodule UnicodeData do
 
   Converts a run of text into a set of lines by implementing UAX#14 and breaking only at required positions.
   """
+  @spec apply_required_linebreaks(String.t, linebreak_classifier | nil, uax14_ruleset | nil) :: [String.t]
   def apply_required_linebreaks(text, linebreak_classification \\ nil, rules \\ nil) do
     text 
     |> linebreak_locations(linebreak_classification, rules)
@@ -549,6 +602,7 @@ defmodule UnicodeData do
       iex> UnicodeData.word_breaking("\u00B4")
       "Other"
   """
+  @spec word_breaking(cp) :: String.t
   def word_breaking(codepoint) when is_integer(codepoint) do
     Segment.word_break(codepoint)
   end
@@ -577,6 +631,7 @@ defmodule UnicodeData do
       iex> UnicodeData.sentence_breaking("]")
       "Close"
   """
+  @spec sentence_breaking(cp) :: String.t
   def sentence_breaking(codepoint) when is_integer(codepoint) do
     Segment.sentence_break(codepoint)
   end
@@ -616,6 +671,7 @@ defmodule UnicodeData do
       iex> UnicodeData.vertical_orientation("\u3083")
       "Tu"
   """
+  @spec vertical_orientation(cp) :: String.t
   def vertical_orientation(codepoint) when is_integer(codepoint) do
     Vertical.orientation(codepoint)
   end
@@ -640,6 +696,7 @@ defmodule UnicodeData do
       "W"
 
   """
+  @spec east_asian_width(cp) :: String.t
   def east_asian_width(codepoint) when is_integer(codepoint) do
     Vertical.east_asian_width(codepoint)
   end

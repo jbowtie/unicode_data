@@ -1,7 +1,6 @@
 defmodule UnicodeData.Segment do
   @moduledoc false
 
-  # TODO: UAX14 Line_Break
   # LineBreak.txt
   @external_resource linebreak_path = Path.join([__DIR__, "LineBreak.txt"])
   lines = File.stream!(linebreak_path, [], :line)
@@ -304,6 +303,13 @@ defmodule UnicodeData.Segment do
   def uax14_break_between([x, y], state, rules \\ @uax14_default_rules) do
     uax14_space_state([x, y], state, rules)
   end
+
+  # TODO: this really needs to be folded into the default rules
+  # something like:
+  # uax14_rule(left, right, carried) :: {result, new_carry}
+  # this allows for more complex tailoring
+  # in addition to usual result can set, clear, or promulgate carry value
+  # seems to cover most regex-like rules
 
   # any of these classes before a space, carry foward in state
   defp uax14_space_state([x, "SP"], _, _) when x in ["OP", "QU", "CL", "CP", "B2", "ZW"] do
