@@ -7,9 +7,11 @@ defmodule UnicodedataTest do
     # LOWER CASE A WITH ACUTE MARK
     assert UnicodeData.script_from_codepoint("\u0225") == "Latin"
   end
+
   test "recognize Arabic codepoints" do
     assert UnicodeData.script_from_codepoint("\u0643") == "Arabic"
   end
+
   test "recognize Common codepoints" do
     # number 9
     assert UnicodeData.script_from_codepoint("9") == "Common"
@@ -20,10 +22,12 @@ defmodule UnicodedataTest do
     # breastfeeding emoji (Unicode 10.0)
     assert UnicodeData.script_from_codepoint("\u{1F931}") == "Common"
   end
+
   test "recognize Adlam codepoints" do
     # Adlam character (Unicode 9.0)
     assert UnicodeData.script_from_codepoint("\u{1E922}") == "Adlam"
   end
+
   test "recognize Nushu codepoints" do
     # Nushu character (Unicode 10.0)
     assert UnicodeData.script_from_codepoint("\u{1B245}") == "Nushu"

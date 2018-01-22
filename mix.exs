@@ -4,16 +4,23 @@ defmodule UnicodeData.Mixfile do
   @version "0.6.0"
 
   def project do
-    [app: :unicode_data,
-     version: @version,
-     elixir: "~> 1.5",
-     build_embedded: Mix.env == :prod,
-     start_permanent: Mix.env == :prod,
-     test_coverage: [tool: ExCoveralls],
-     preferred_cli_env: ["coveralls": :test, "coveralls.detail": :test, "coveralls.post": :test, "coveralls.html": :test],
-     description: "Exposes Unicode properties needed for layout and analysis.",
-     package: package(),
-     deps: deps()]
+    [
+      app: :unicode_data,
+      version: @version,
+      elixir: "~> 1.5",
+      build_embedded: Mix.env() == :prod,
+      start_permanent: Mix.env() == :prod,
+      test_coverage: [tool: ExCoveralls],
+      preferred_cli_env: [
+        coveralls: :test,
+        "coveralls.detail": :test,
+        "coveralls.post": :test,
+        "coveralls.html": :test
+      ],
+      description: "Exposes Unicode properties needed for layout and analysis.",
+      package: package(),
+      deps: deps()
+    ]
   end
 
   # Configuration for the OTP application
@@ -34,18 +41,21 @@ defmodule UnicodeData.Mixfile do
   #
   # Type "mix help deps" for more examples and options
   defp deps do
-    [{:ex_doc, "~> 0.18", only: :dev, runtime: false},
-     {:excoveralls, "~> 0.7.5", only: :test},
-     {:inch_ex, "~> 0.5.6", only: :docs}]
+    [
+      {:ex_doc, "~> 0.18", only: :dev, runtime: false},
+      {:excoveralls, "~> 0.7.5", only: :test},
+      {:inch_ex, "~> 0.5.6", only: :docs}
+    ]
   end
 
   defp package do
-    [licenses: ["Apache 2.0"],
-     name: "unicode_data",
-     maintainers: ["jbowtie/John C Barstow"],
-     links: %{
-       "GitHub" => "https://github.com/jbowtie/unicode_data",
-     }
+    [
+      licenses: ["Apache 2.0"],
+      name: "unicode_data",
+      maintainers: ["jbowtie/John C Barstow"],
+      links: %{
+        "GitHub" => "https://github.com/jbowtie/unicode_data"
+      }
     ]
   end
 end

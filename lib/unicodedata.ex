@@ -37,7 +37,7 @@ defmodule UnicodeData do
   Textual analysis often requires splitting on line, word, or sentence boundaries. While the most
   sophisticated algorithms require contextual knowledge, Unicode provides properties and default
   algorithms for this purpose.
-  
+
   ### Line Breaking
 
   The Unicode line-breaking algorithm described in [UAX #14](http://www.unicode.org/reports/tr14/) 
@@ -86,17 +86,18 @@ defmodule UnicodeData do
   @typedoc """
   A codepoint in either binary or numeric form.
   """
-  @type cp :: integer | String.codepoint
+  @type cp :: integer | String.codepoint()
 
   @typedoc """
   Function that can override or resolve the linebreak classification of a codepoint.
   """
-  @type linebreak_classifier :: (String.codepoint, String.t -> String.t)
+  @type linebreak_classifier :: (String.codepoint(), String.t() -> String.t())
 
   @typedoc """
   Function that determines whether a break is allowed between two linebreak classifiers.
   """
-  @type uax14_tailored_rule :: (String.t, String.t, String.t | nil -> {atom | nil, String.t | nil})
+  @type uax14_tailored_rule ::
+          (String.t(), String.t(), String.t() | nil -> {atom | nil, String.t() | nil})
 
   @typedoc """
   Set of tailored line-breaking rules.
@@ -126,10 +127,11 @@ defmodule UnicodeData do
       "Arabic"
 
   """
-  @spec script_from_codepoint(integer | String.codepoint) :: String.t
+  @spec script_from_codepoint(integer | String.codepoint()) :: String.t()
   def script_from_codepoint(codepoint) when is_integer(codepoint) do
     Script.script_from_codepoint(codepoint)
   end
+
   def script_from_codepoint(codepoint) do
     <<intval::utf8>> = codepoint
     script_from_codepoint(intval)
@@ -142,7 +144,7 @@ defmodule UnicodeData do
 
   See [Annex #24](http://www.unicode.org/reports/tr24/) for more about
   the relationship between Unicode and ISO 15942.
-  
+
   Data from [OpenType script tags](http://www.microsoft.com/typography/otspec/scripttags.htm)
   and [PropertyValueAliases.txt](http://www.unicode.org/Public/UNIDATA/PropertyValueAliases.txt)
 
@@ -157,11 +159,10 @@ defmodule UnicodeData do
 
 
   """
-  @spec script_to_tag(String.t) :: String.t
+  @spec script_to_tag(String.t()) :: String.t()
   def script_to_tag(script) do
     Script.script_to_tag(script)
   end
-
 
   @doc """
   Determine if the script is written right-to-left.
@@ -176,29 +177,30 @@ defmodule UnicodeData do
       false
       iex> UnicodeData.right_to_left?("Arabic")
       true
-  
+
   You can also pass the script short name.
 
       iex> UnicodeData.right_to_left?("adlm")
       true
 
   """
-  @spec right_to_left?(String.t) :: boolean
+  @spec right_to_left?(String.t()) :: boolean
   def right_to_left?(script) do
     as_tag = Script.right_to_left?(script)
+
     if as_tag do
       true
     else
       script
       |> script_to_tag
-      |> Script.right_to_left?
+      |> Script.right_to_left?()
     end
   end
 
   @doc """
   Determine if a script uses the `Joining Type` property
   to select contextual forms.
-  
+
   Typically this is used to select a shaping engine, which will then call
   `joining_type/1` and `joining_group/1` to do cursive shaping.
 
@@ -217,18 +219,18 @@ defmodule UnicodeData do
       true
 
   """
-  @spec uses_joining_type?(String.t) :: boolean
+  @spec uses_joining_type?(String.t()) :: boolean
   def uses_joining_type?(script) do
     as_tag = Script.uses_joining_type?(script)
+
     if as_tag do
       true
     else
       script
       |> script_to_tag
-      |> Script.uses_joining_type?
+      |> Script.uses_joining_type?()
     end
   end
-
 
   @doc """
   Determine the joining type for cursive scripts.
@@ -240,7 +242,7 @@ defmodule UnicodeData do
   *  `C` Join_Causing -- forces a join to occur.
   *  `U` Non_Joining -- does not join to characters on either side.
   *  `T` Transparent -- characters on either side join to each other.
-  
+
   Transparent characters are treated as if they do not exist during joining -- typically these are
   marks that render above or below the preceding base glyph.
 
@@ -257,10 +259,11 @@ defmodule UnicodeData do
       iex> UnicodeData.joining_type("\u0710")
       "R"
   """
-  @spec joining_type(cp) :: String.t
+  @spec joining_type(cp) :: String.t()
   def joining_type(codepoint) when is_integer(codepoint) do
     Script.jointype_from_codepoint(codepoint)
   end
+
   def joining_type(codepoint) do
     <<intval::utf8>> = codepoint
     joining_type(intval)
@@ -271,7 +274,7 @@ defmodule UnicodeData do
 
   Characters from other scripts return `No_Joining_Group` as they do not
   participate in cursive shaping.
-  
+
   The `ALAPH` and `DALATH RISH` joining groups are of particular interest
   to shaping engines dealing with Syriac. 
   [Chapter 9.3 of the Unicode Standard](http://www.unicode.org/versions/Unicode10.0.0/ch09.pdf) 
@@ -288,10 +291,11 @@ defmodule UnicodeData do
       iex> UnicodeData.joining_group("\u0710")
       "ALAPH"
   """
-  @spec joining_group(cp) :: String.t
+  @spec joining_group(cp) :: String.t()
   def joining_group(codepoint) when is_integer(codepoint) do
     Script.joingroup_from_codepoint(codepoint)
   end
+
   def joining_group(codepoint) do
     <<intval::utf8>> = codepoint
     joining_group(intval)
@@ -320,10 +324,11 @@ defmodule UnicodeData do
       iex> UnicodeData.bidi_class("\uFE75")
       "AL"
   """
-  @spec bidi_class(cp) :: String.t
+  @spec bidi_class(cp) :: String.t()
   def bidi_class(codepoint) when is_integer(codepoint) do
     Bidi.bidi_class(codepoint)
   end
+
   def bidi_class(codepoint) do
     <<intval::utf8>> = codepoint
     bidi_class(intval)
@@ -354,6 +359,7 @@ defmodule UnicodeData do
   def bidi_mirrored?(codepoint) when is_integer(codepoint) do
     Bidi.mirrored?(codepoint)
   end
+
   def bidi_mirrored?(codepoint) do
     <<intval::utf8>> = codepoint
     bidi_mirrored?(intval)
@@ -375,11 +381,12 @@ defmodule UnicodeData do
       iex> UnicodeData.bidi_mirror_codepoint("A")
       nil
   """
-  @spec bidi_mirror_codepoint(cp) :: String.codepoint | nil
+  @spec bidi_mirror_codepoint(cp) :: String.codepoint() | nil
   def bidi_mirror_codepoint(codepoint) when is_integer(codepoint) do
     m = Bidi.mirror_glyph(codepoint)
     if m != nil, do: <<m::utf8>>, else: nil
   end
+
   def bidi_mirror_codepoint(<<codepoint::utf8>>) do
     bidi_mirror_codepoint(codepoint)
   end
@@ -403,12 +410,13 @@ defmodule UnicodeData do
       "c"
       iex> UnicodeData.bidi_paired_bracket_type("A")
       "n"
-  
+
   """
-  @spec bidi_paired_bracket_type(cp) :: String.t
+  @spec bidi_paired_bracket_type(cp) :: String.t()
   def bidi_paired_bracket_type(codepoint) when is_integer(codepoint) do
     Bidi.paired_bracket_type(codepoint)
   end
+
   def bidi_paired_bracket_type(<<codepoint::utf8>>) do
     Bidi.paired_bracket_type(codepoint)
   end
@@ -430,13 +438,14 @@ defmodule UnicodeData do
       "["
       iex> UnicodeData.bidi_paired_bracket("A")
       nil
-  
+
   """
-  @spec bidi_paired_bracket(cp) :: String.codepoint | nil
+  @spec bidi_paired_bracket(cp) :: String.codepoint() | nil
   def bidi_paired_bracket(codepoint) when is_integer(codepoint) do
     val = Bidi.paired_bracket(codepoint)
     if val != nil, do: <<val::utf8>>, else: nil
   end
+
   def bidi_paired_bracket(<<codepoint::utf8>>) do
     bidi_paired_bracket(codepoint)
   end
@@ -465,10 +474,11 @@ defmodule UnicodeData do
       iex> UnicodeData.line_breaking(":")
       "IS"
   """
-  @spec line_breaking(cp) :: String.t
+  @spec line_breaking(cp) :: String.t()
   def line_breaking(codepoint) when is_integer(codepoint) do
     Segment.line_break(codepoint)
   end
+
   def line_breaking(<<codepoint::utf8>>) do
     Segment.line_break(codepoint)
   end
@@ -479,7 +489,7 @@ defmodule UnicodeData do
   This allows you to override the value that would normally be returned and is a simple way to tailor the 
   behaviour of the line breaking algorithm.
   """
-  @spec line_breaking(cp, linebreak_classifier) :: String.t
+  @spec line_breaking(cp, linebreak_classifier) :: String.t()
   def line_breaking(<<codepoint::utf8>>, tailoring) do
     orig = Segment.line_break(codepoint)
     tailoring.(codepoint, orig)
@@ -490,20 +500,24 @@ defmodule UnicodeData do
 
   Breaks opportunities are classified as either required or allowed.
   """
-  @spec linebreak_locations(String.t, linebreak_classifier | nil, uax14_ruleset | nil) :: [{:required | :allowed, integer}]
+  @spec linebreak_locations(String.t(), linebreak_classifier | nil, uax14_ruleset | nil) :: [
+          {:required | :allowed, integer}
+        ]
   def linebreak_locations(text, tailoring \\ nil, rules \\ nil) do
     tailored_classes = if tailoring == nil, do: &default_linebreak_classes/2, else: tailoring
     tailored_rules = if rules == nil, do: Segment.uax14_default_rules(), else: rules
-    out = text
-    |> String.codepoints
-    |> Stream.map(fn x -> line_breaking(x, tailored_classes) end)
-    |> Stream.chunk(2, 1)
-    |> Enum.map_reduce(nil, fn(x, acc) -> Segment.uax14_break_between(x, acc, tailored_rules) end)
-    |> elem(0)
-    |> Stream.with_index(1)
-    |> Stream.filter(fn {k, _} -> k != :prohibited end)
-    #|> Enum.map(fn {k, v} -> v end)
-    |> Enum.to_list
+    # |> Enum.map(fn {k, v} -> v end)
+    out =
+      text
+      |> String.codepoints()
+      |> Stream.map(fn x -> line_breaking(x, tailored_classes) end)
+      |> Stream.chunk(2, 1)
+      |> Enum.map_reduce(nil, fn x, acc -> Segment.uax14_break_between(x, acc, tailored_rules) end)
+      |> elem(0)
+      |> Stream.with_index(1)
+      |> Stream.filter(fn {k, _} -> k != :prohibited end)
+      |> Enum.to_list()
+
     out
   end
 
@@ -516,7 +530,7 @@ defmodule UnicodeData do
   If you are supplying your own tailoring function, you may want unhandled cases to
   fall back to this implementation.
   """
-  @spec default_linebreak_classes(cp, String.t) :: String.t
+  @spec default_linebreak_classes(cp, String.t()) :: String.t()
   def default_linebreak_classes(codepoint, original_class) do
     case original_class do
       "AI" -> "AL"
@@ -532,24 +546,28 @@ defmodule UnicodeData do
   Converts a run of text into a set of lines by implementing UAX#14, breaking only at required positions,
   and indicating allowed break positions.
   """
-  @spec identify_linebreak_positions(String.t, linebreak_classifier | nil, uax14_ruleset | nil) :: [{String.t, [integer]}]
+  @spec identify_linebreak_positions(String.t(), linebreak_classifier | nil, uax14_ruleset | nil) ::
+          [{String.t(), [integer]}]
   def identify_linebreak_positions(text, tailoring \\ nil, rules \\ nil) do
-    text 
+    text
     |> linebreak_locations(tailoring, rules)
-    |> Enum.chunk_while({0, []}, fn {break, index}, {offset, allowed} ->
-      if break == :required do
-        {
-          :cont, 
-          {String.slice(text, offset, index-1), Enum.reverse(allowed)},
-          {index, []}
-        }
-      else
-        {:cont, {offset, [index - offset | allowed]}}
+    |> Enum.chunk_while(
+      {0, []},
+      fn {break, index}, {offset, allowed} ->
+        if break == :required do
+          {
+            :cont,
+            {String.slice(text, offset, index - 1), Enum.reverse(allowed)},
+            {index, []}
+          }
+        else
+          {:cont, {offset, [index - offset | allowed]}}
+        end
+      end,
+      fn {offset, allowed} ->
+        {:cont, {String.slice(text, offset, String.length(text)), Enum.reverse(allowed)}, {0, []}}
       end
-    end,
-    fn 
-      {offset, allowed} -> {:cont, {String.slice(text, offset, String.length(text)), Enum.reverse(allowed)}, {0, []}}
-    end)
+    )
   end
 
   @doc """
@@ -561,27 +579,29 @@ defmodule UnicodeData do
 
   Converts a run of text into a set of lines by implementing UAX#14 and breaking only at required positions.
   """
-  @spec apply_required_linebreaks(String.t, linebreak_classifier | nil, uax14_ruleset | nil) :: [String.t]
+  @spec apply_required_linebreaks(String.t(), linebreak_classifier | nil, uax14_ruleset | nil) ::
+          [String.t()]
   def apply_required_linebreaks(text, linebreak_classification \\ nil, rules \\ nil) do
-    text 
+    text
     |> linebreak_locations(linebreak_classification, rules)
     |> Stream.filter(fn {k, _} -> k == :required end)
-    |> Stream.chunk_while(0, fn {_, index}, offset ->
-      {
-        :cont, 
-        String.slice(text, offset, index-1),
-        index
-      }
-    end,
-    fn 
-      offset -> {:cont, String.slice(text, offset, String.length(text)), 0}
-    end)
-    |> Enum.to_list
+    |> Stream.chunk_while(
+      0,
+      fn {_, index}, offset ->
+        {
+          :cont,
+          String.slice(text, offset, index - 1),
+          index
+        }
+      end,
+      fn offset -> {:cont, String.slice(text, offset, String.length(text)), 0} end
+    )
+    |> Enum.to_list()
   end
 
   @doc """
   The `Word_Break` property can be used to help determine word boundaries.
-  
+
   [UAX #29](http://www.unicode.org/reports/tr29/) provides a simple algorithm that uses 
   this property to handle most unambiguous situations. To get better results, you should
   tailor the algorithm for the locale and context. In particular, hyphens and apostrophes
@@ -602,17 +622,18 @@ defmodule UnicodeData do
       iex> UnicodeData.word_breaking("\u00B4")
       "Other"
   """
-  @spec word_breaking(cp) :: String.t
+  @spec word_breaking(cp) :: String.t()
   def word_breaking(codepoint) when is_integer(codepoint) do
     Segment.word_break(codepoint)
   end
+
   def word_breaking(<<codepoint::utf8>>) do
     word_breaking(codepoint)
   end
 
   @doc """
   The `Sentence_Break` property can be used to help determine sentence boundaries.
-  
+
   [UAX #29](http://www.unicode.org/reports/tr29/) provides a simple algorithm that uses this property to 
   handle most unambiguous situations. If the locale is known, information in the [CLDR](http://cldr.unicode.org/index)
   can be used to improve the quality of boundary analysis.
@@ -631,10 +652,11 @@ defmodule UnicodeData do
       iex> UnicodeData.sentence_breaking("]")
       "Close"
   """
-  @spec sentence_breaking(cp) :: String.t
+  @spec sentence_breaking(cp) :: String.t()
   def sentence_breaking(codepoint) when is_integer(codepoint) do
     Segment.sentence_break(codepoint)
   end
+
   def sentence_breaking(<<codepoint::utf8>>) do
     sentence_breaking(codepoint)
   end
@@ -671,10 +693,11 @@ defmodule UnicodeData do
       iex> UnicodeData.vertical_orientation("\u3083")
       "Tu"
   """
-  @spec vertical_orientation(cp) :: String.t
+  @spec vertical_orientation(cp) :: String.t()
   def vertical_orientation(codepoint) when is_integer(codepoint) do
     Vertical.orientation(codepoint)
   end
+
   def vertical_orientation(<<codepoint::utf8>>) do
     vertical_orientation(codepoint)
   end
@@ -696,10 +719,11 @@ defmodule UnicodeData do
       "W"
 
   """
-  @spec east_asian_width(cp) :: String.t
+  @spec east_asian_width(cp) :: String.t()
   def east_asian_width(codepoint) when is_integer(codepoint) do
     Vertical.east_asian_width(codepoint)
   end
+
   def east_asian_width(<<codepoint::utf8>>) do
     east_asian_width(codepoint)
   end
