@@ -1,7 +1,7 @@
 # UnicodeData
 
 [![pipeline status](https://gitlab.com/jbowtie/unicode_data/badges/master/pipeline.svg)](https://gitlab.com/jbowtie/unicode_data/commits/master)
-[![codecov](https://codecov.io/gh/jbowtie/unicode_data/branch/master/graph/badge.svg)](https://codecov.io/gh/jbowtie/unicode_data)
+[![coverage report](https://gitlab.com/jbowtie/unicode_data/badges/master/coverage.svg)](https://gitlab.com/jbowtie/unicode_data/commits/master)
 [![Inline docs](http://inch-ci.org/github/jbowtie/unicode_data.svg)](http://inch-ci.org/github/jbowtie/unicode_data)
 [![Hex Version](https://img.shields.io/hexpm/v/unicode_data.svg)](https://hex.pm/packages/unicode_data)
 
