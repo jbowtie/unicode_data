@@ -19,7 +19,7 @@ The package can be installed by adding `unicode_data` to your list of dependenci
 
 ```elixir
 def deps do
-  [{:unicode_data, "~> 0.6.0"}]
+  [{:unicode_data, "~> 0.7.0"}]
 end
 ```
 
