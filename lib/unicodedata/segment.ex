@@ -75,13 +75,7 @@ defmodule UnicodeData.Segment do
       {"ZW", _} ->
         :allowed
 
-      {"ZWJ", "ID"} ->
-        :prohibited
-
-      {"ZWJ", "EB"} ->
-        :prohibited
-
-      {"ZWJ", "EM"} ->
+      {"ZWJ", _} ->
         :prohibited
 
       # LB 9 and 10 are fully implemented in calling code
