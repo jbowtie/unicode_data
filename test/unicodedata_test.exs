@@ -33,6 +33,11 @@ defmodule UnicodedataTest do
     assert UnicodeData.script_from_codepoint("\u{1B245}") == "Nushu"
   end
 
+  test "recognize Medefaidrin codepoints" do
+    # Nushu character (Unicode 11.0)
+    assert UnicodeData.script_from_codepoint("\u{16E52}") == "Medefaidrin"
+  end
+
   test "determine join_type" do
     assert UnicodeData.joining_type("a") == "U"
     assert UnicodeData.joining_type("\u0643") == "D"

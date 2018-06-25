@@ -34,7 +34,7 @@ defmodule UnicodeData.Script do
     # Data from http://www.microsoft.com/typography/otspec/scripttags.htm
     # and http://www.unicode.org/Public/UNIDATA/PropertyValueAliases.txt.
     #
-    # Updated through to Unicode 10.0
+    # Updated through to Unicode 11.0
     unicode_scripts = %{
       "Ahom" => "ahom",
       "Anatolian_Hieroglyphs" => "hluw",
@@ -207,7 +207,7 @@ defmodule UnicodeData.Script do
   # There's a handy sortable table on
   # https://en.wikipedia.org/wiki/ISO_15924
   #
-  # Updated through to Unicode 10.0
+  # Updated through to Unicode 11.0
   def right_to_left?(script) do
     rtl_scripts = [
       # unicode 7.0
