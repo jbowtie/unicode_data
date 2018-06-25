@@ -54,7 +54,8 @@ defmodule UnicodeData.Mixfile do
       name: "unicode_data",
       maintainers: ["jbowtie/John C Barstow"],
       links: %{
-        "GitHub" => "https://github.com/jbowtie/unicode_data"
+        "GitHub" => "https://github.com/jbowtie/unicode_data",
+        "GitLab" => "https://gitlab.com/jbowtie/unicode_data"
       }
     ]
   end
