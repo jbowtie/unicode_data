@@ -185,6 +185,15 @@ defmodule UnicodeData.Script do
       "Soyombo" => "soyo",
       "Zanabazar_Square" => "zanb",
 
+      # Unicode 11.0
+      "Hanifi_Rohingya" => "rohg",
+      "Old_Sogdian" => "sogo",
+      "Sogdian" => "sogd",
+      "Dogra" => "dogr",
+      "Gunjala_Gondi" => "gong",
+      "Makasar" => "maka",
+      "Medefaidrin" => "medf",
+
       # always at the bottom as they are special
       "Inherited" => "zinh",
       "Common" => "zyyy",
@@ -231,7 +240,12 @@ defmodule UnicodeData.Script do
       "hatr",
       "hung",
       # unicode 9.0
-      "adlm"
+      "adlm",
+      # unicode 11.0
+      "medf",
+      "rohg",
+      "sogd",
+      "sogo"
     ]
 
     script in rtl_scripts
