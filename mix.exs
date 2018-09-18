@@ -44,7 +44,7 @@ defmodule UnicodeData.Mixfile do
     [
       {:ex_doc, "~> 0.18", only: :dev, runtime: false},
       {:excoveralls, "~> 0.9.1", only: :test},
-      {:inch_ex, "~> 0.5.6", only: :docs}
+      {:inch_ex, "~> 1.0.1", only: :docs}
     ]
   end
 
