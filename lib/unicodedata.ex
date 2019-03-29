@@ -511,7 +511,7 @@ defmodule UnicodeData do
       text
       |> String.codepoints()
       |> Stream.map(fn x -> line_breaking(x, tailored_classes) end)
-      |> Stream.chunk(2, 1)
+      |> Stream.chunk_every(2, 1, :discard)
       |> Enum.map_reduce(nil, fn x, acc -> Segment.uax14_break_between(x, acc, tailored_rules) end)
       |> elem(0)
       |> Stream.with_index(1)

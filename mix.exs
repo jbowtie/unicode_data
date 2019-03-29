@@ -42,9 +42,9 @@ defmodule UnicodeData.Mixfile do
   # Type "mix help deps" for more examples and options
   defp deps do
     [
-      {:ex_doc, "~> 0.18", only: :dev, runtime: false},
-      {:excoveralls, "~> 0.9.1", only: :test},
-      {:inch_ex, "~> 0.5.6", only: :docs}
+      {:ex_doc, "~> 0.19.3", only: :dev, runtime: false},
+      {:excoveralls, "~> 0.10.6", only: :test},
+      {:inch_ex, "~> 2.0.0", only: :docs}
     ]
   end
 

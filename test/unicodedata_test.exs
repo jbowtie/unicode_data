@@ -34,8 +34,13 @@ defmodule UnicodedataTest do
   end
 
   test "recognize Medefaidrin codepoints" do
-    # Nushu character (Unicode 11.0)
+    # Medefaidrin character (Unicode 11.0)
     assert UnicodeData.script_from_codepoint("\u{16E52}") == "Medefaidrin"
+  end
+
+  test "recognize Elymaic codepoints" do
+    # Elymaic character (Unicode 12.0)
+    assert UnicodeData.script_from_codepoint("\u{10FE3}") == "Elymaic"
   end
 
   test "determine join_type" do

@@ -34,7 +34,7 @@ defmodule UnicodeData.Script do
     # Data from http://www.microsoft.com/typography/otspec/scripttags.htm
     # and http://www.unicode.org/Public/UNIDATA/PropertyValueAliases.txt.
     #
-    # Updated through to Unicode 11.0
+    # Updated through to Unicode 12.0
     unicode_scripts = %{
       "Ahom" => "ahom",
       "Anatolian_Hieroglyphs" => "hluw",
@@ -194,6 +194,12 @@ defmodule UnicodeData.Script do
       "Makasar" => "maka",
       "Medefaidrin" => "medf",
 
+      # Unicode 12.0
+      "Elymaic" => "elym",
+      "Nyiakeng_Puachue_Hmong" => "hmnp",
+      "Nandinagari" => "nand",
+      "Wancho" => "wcho",
+
       # always at the bottom as they are special
       "Inherited" => "zinh",
       "Common" => "zyyy",
@@ -207,7 +213,7 @@ defmodule UnicodeData.Script do
   # There's a handy sortable table on
   # https://en.wikipedia.org/wiki/ISO_15924
   #
-  # Updated through to Unicode 11.0
+  # Updated through to Unicode 12.0
   def right_to_left?(script) do
     rtl_scripts = [
       # unicode 7.0
@@ -245,7 +251,9 @@ defmodule UnicodeData.Script do
       "medf",
       "rohg",
       "sogd",
-      "sogo"
+      "sogo",
+      # unicode 12.0
+      "elym"
     ]
 
     script in rtl_scripts
