@@ -1,13 +1,13 @@
 defmodule UnicodeData.Mixfile do
   use Mix.Project
 
-  @version "0.7.0"
+  @version "0.8.0"
 
   def project do
     [
       app: :unicode_data,
       version: @version,
-      elixir: "~> 1.5",
+      elixir: "~> 1.8",
       build_embedded: Mix.env() == :prod,
       start_permanent: Mix.env() == :prod,
       test_coverage: [tool: ExCoveralls],
