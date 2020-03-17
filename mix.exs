@@ -43,7 +43,7 @@ defmodule UnicodeData.Mixfile do
   defp deps do
     [
       {:ex_doc, "~> 0.19.3", only: :dev, runtime: false},
-      {:excoveralls, "~> 0.10.6", only: :test},
+      {:excoveralls, "~> 0.12.3", only: :test},
       {:inch_ex, "~> 2.0.0", only: :docs}
     ]
   end
